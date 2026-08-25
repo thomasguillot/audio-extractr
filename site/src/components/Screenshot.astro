@@ -1,0 +1,42 @@
+---
+interface Props {
+  name: "input" | "edit" | "done";
+  alt: string;
+  width: number;
+  height: number;
+  loading?: "eager" | "lazy";
+  priority?: boolean;
+  class?: string;
+}
+
+const { name, alt, width, height, loading = "lazy", priority = false, class: className } = Astro.props;
+const base = import.meta.env.BASE_URL.replace(/\/$/, "");
+---
+
+<picture class:list={["shot", className]} data-reveal-image={priority ? undefined : true}>
+  <source srcset={`${base}/screenshots/${name}-dark.png`} media="(prefers-color-scheme: dark)" />
+  <img
+    src={`${base}/screenshots/${name}-light.png`}
+    alt={alt}
+    width={width}
+    height={height}
+    loading={loading}
+    decoding="async"
+    fetchpriority={priority ? "high" : undefined}
+  />
+</picture>
+
+<style>
+  .shot {
+    border-radius: var(--radius-md);
+    overflow: hidden;
+    border: 1px solid var(--line);
+    background: var(--surface);
+    box-shadow: var(--shadow-window);
+  }
+
+  .shot img {
+    width: 100%;
+    height: auto;
+  }
+</style>

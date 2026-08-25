@@ -1,0 +1,70 @@
+---
+import Section from "./Section.astro";
+
+const features = [
+  {
+    title: "Paste a link",
+    body: "Pulls the audio from most video and audio links, powered by yt-dlp.",
+  },
+  {
+    title: "Or drop a file",
+    body: "Any audio or video file ffmpeg can read. Drag it in or browse.",
+  },
+  {
+    title: "Trim on the waveform",
+    body: "Drag the handles to keep just the part you want. They snap to the playhead, and Space plays and pauses the preview.",
+  },
+  {
+    title: "Speed",
+    body: "0.25× to 2× in fine steps, pitch preserved. Preview it before you save.",
+  },
+  {
+    title: "MP3 out",
+    body: "Clean 192 kbps MP3, saved to the folder you choose. Names never clash.",
+  },
+  {
+    title: "Self-updating",
+    body: "Updates itself from GitHub Releases and keeps yt-dlp current, so upstream changes don't break your downloads.",
+  },
+];
+---
+
+<Section
+  id="features"
+  title="What it does"
+  lede="One small window that does the whole job: paste or drop, trim, set the speed, and save."
+>
+  <ul class="features grid span-all" role="list">
+    {
+      features.map((feature) => (
+        <li class="span-half">
+          <h3 class="title">{feature.title}</h3>
+          <p>{feature.body}</p>
+        </li>
+      ))
+    }
+  </ul>
+</Section>
+
+<style>
+  .features {
+    --row-gap: 0;
+    list-style: none;
+    margin: 0;
+    padding: 0;
+  }
+
+  .features li {
+    max-width: none;
+    border-top: 1px solid var(--line);
+    padding: 20px 0 24px;
+  }
+
+  h3 {
+    margin-bottom: 6px;
+  }
+
+  p {
+    color: var(--muted);
+  }
+</style>

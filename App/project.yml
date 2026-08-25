@@ -1,0 +1,60 @@
+name: AudioExtractr
+options:
+  bundleIdPrefix: com.audioextractr
+  deploymentTarget:
+    macOS: "26.0"
+packages:
+  ExtractrKit:
+    path: ../ExtractrKit
+targets:
+  AudioExtractr:
+    type: application
+    platform: macOS
+    sources:
+      - path: Sources
+    dependencies:
+      - package: ExtractrKit
+    info:
+      path: Sources/Info.plist
+      properties:
+        CFBundleDisplayName: Audio Extractr
+        CFBundleShortVersionString: "$(MARKETING_VERSION)"
+        CFBundleVersion: "$(CURRENT_PROJECT_VERSION)"
+        LSMinimumSystemVersion: "26.0"
+        LSApplicationCategoryType: public.app-category.utilities
+        NSHumanReadableCopyright: "© 2026 Thomas Guillot · MIT licensed"
+    preBuildScripts:
+      - name: SwiftLint
+        basedOnDependencyAnalysis: false
+        script: |
+          if command -v swiftlint >/dev/null 2>&1; then
+            cd "$SRCROOT/.." && swiftlint lint --quiet
+          else
+            echo "note: SwiftLint not installed; skipping lint (brew install swiftlint)."
+          fi
+    postBuildScripts:
+      - name: Bundle tools
+        basedOnDependencyAnalysis: false
+        script: |
+          set -e
+          SRC="$SRCROOT/../Support/binaries"
+          if [ ! -x "$SRC/yt-dlp" ] || [ ! -x "$SRC/ffmpeg" ]; then
+            echo "error: missing Support/binaries — run scripts/fetch-binaries.sh first" >&2
+            exit 1
+          fi
+          DST="$BUILT_PRODUCTS_DIR/$UNLOCALIZED_RESOURCES_FOLDER_PATH/bin"
+          mkdir -p "$DST"
+          cp "$SRC/yt-dlp" "$SRC/ffmpeg" "$SRC/yt-dlp.tag" "$SRC/ffmpeg.LICENSE" "$DST/"
+          chmod +x "$DST/yt-dlp" "$DST/ffmpeg"
+    settings:
+      base:
+        PRODUCT_BUNDLE_IDENTIFIER: com.audioextractr.app
+        PRODUCT_NAME: "Audio Extractr"
+        MARKETING_VERSION: "1.0.0"
+        CURRENT_PROJECT_VERSION: "1"
+        SWIFT_VERSION: "6.0"
+        ARCHS: arm64
+        ASSETCATALOG_COMPILER_APPICON_NAME: AppIcon
+        GENERATE_INFOPLIST_FILE: NO
+        CODE_SIGN_IDENTITY: "-"
+        CODE_SIGNING_REQUIRED: NO

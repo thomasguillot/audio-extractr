@@ -1,0 +1,55 @@
+---
+import DownloadButton from "./DownloadButton.astro";
+---
+
+<footer class="footer">
+  <div class="shell">
+    <div class="grid inner">
+      <div class="span-head">
+        <DownloadButton />
+      </div>
+      <nav class="links span-body" aria-label="Project links">
+        <a href="https://github.com/thomasguillot/audio-extractr">GitHub</a>
+        <a href="https://github.com/thomasguillot/audio-extractr/releases">Releases</a>
+        <a href="https://github.com/thomasguillot/audio-extractr/issues">Report an issue</a>
+        <a href="https://github.com/thomasguillot/audio-extractr/blob/main/ACKNOWLEDGEMENTS.md">Acknowledgements</a>
+      </nav>
+    </div>
+  </div>
+</footer>
+
+<style>
+  .footer {
+    padding-top: var(--section);
+    padding-bottom: calc(var(--section) + 24px);
+  }
+
+  .inner {
+    border-top: 1px solid var(--line);
+    padding-top: var(--section-lead);
+    align-items: center;
+  }
+
+  .links {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 12px 24px;
+    align-items: center;
+  }
+
+  @media (min-width: 900px) {
+    .links {
+      justify-content: flex-end;
+    }
+  }
+
+  .links a {
+    color: var(--muted);
+    font-weight: 560;
+    text-decoration: none;
+  }
+
+  .links a:hover {
+    color: var(--text);
+  }
+</style>

@@ -1,0 +1,26 @@
+# Defers to .swift-format on whitespace/indentation; line_length matches its lineLength (110).
+included:
+  - App/Sources
+  - ExtractrKit/Sources
+excluded:
+  - App/Sources/Info.plist
+disabled_rules:
+  # Owned by swift-format (avoid dueling formatters):
+  - trailing_whitespace
+  - opening_brace
+  - statement_position
+  - todo
+  - line_length
+  - trailing_comma
+  # GitHubRelease uses nested types for tight encapsulation:
+  - nesting
+  # The ported update code deliberately uses the non-failable String(decoding:) idiom —
+  # a lint rule must not change runtime semantics:
+  - optional_data_string_conversion
+identifier_name:
+  min_length: 1
+type_name:
+  min_length: 2
+file_length:
+  warning: 600
+  error: 800

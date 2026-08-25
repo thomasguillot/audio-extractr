@@ -1,0 +1,83 @@
+---
+import Section from "./Section.astro";
+---
+
+<Section
+  id="install"
+  title="Installing an unsigned app"
+  lede="No Apple Developer Program, so macOS asks you to approve it once. Nothing runs behind your back."
+>
+  <ol class="steps span-body" role="list">
+    <li>
+      <h3 class="title">Open the app</h3>
+      <p>
+        Double-click <strong>Audio Extractr</strong>. When macOS says it "can't verify the developer,"
+        click <kbd>Done</kbd>, not "Move to Trash."
+      </p>
+    </li>
+    <li>
+      <h3 class="title">Allow it in Settings</h3>
+      <p>
+        Open <strong>System Settings</strong>, then <strong>Privacy &amp; Security</strong>, scroll to
+        Security, and click <kbd>Open Anyway</kbd>.
+      </p>
+    </li>
+    <li>
+      <h3 class="title">Confirm</h3>
+      <p>Authenticate and click <kbd>Open</kbd>. macOS only asks once. After that it launches normally.</p>
+    </li>
+  </ol>
+</Section>
+
+<style>
+  .steps {
+    list-style: none;
+    counter-reset: step;
+    margin: 0;
+    padding: 0;
+  }
+
+  .steps li {
+    position: relative;
+    max-width: none;
+    border-top: 1px solid var(--line);
+    padding: 20px 0 24px 36px;
+  }
+
+  .steps li::before {
+    counter-increment: step;
+    content: counter(step);
+    position: absolute;
+    left: 0;
+    top: 20px;
+    font-size: 1.125rem;
+    font-weight: 650;
+    line-height: 1.3;
+    letter-spacing: -0.01em;
+    font-variant-numeric: tabular-nums;
+    color: var(--accent);
+  }
+
+  h3 {
+    margin-bottom: 4px;
+  }
+
+  p {
+    color: var(--muted);
+  }
+
+  strong {
+    color: var(--text);
+    font-weight: 650;
+  }
+
+  kbd {
+    font-family: inherit;
+    font-size: 0.9em;
+    background: var(--surface-2);
+    border: 1px solid var(--line);
+    border-radius: var(--radius-sm);
+    padding: 1px 6px;
+    color: var(--text);
+  }
+</style>

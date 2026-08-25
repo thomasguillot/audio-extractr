@@ -1,0 +1,56 @@
+name: Deploy site to GitHub Pages
+
+# Serves the marketing site from the site/ folder. GitHub Pages' branch setting
+# can only publish from repo root or /docs, so an Actions deploy is what lets us
+# keep the site under site/ (and leaves the git-ignored docs/ untouched).
+on:
+  push:
+    branches: [main]
+    paths:
+      - "site/**"
+      - ".github/workflows/pages.yml"
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+concurrency:
+  group: pages
+  cancel-in-progress: false
+
+jobs:
+  build:
+    runs-on: ubuntu-latest
+    permissions:
+      contents: read
+    steps:
+      - uses: actions/checkout@v7
+
+      - uses: pnpm/setup@v2
+        with:
+          runtime: node@22
+          package-json-file: site/package.json
+          install: false
+          cache: true
+          cache-dependency-path: site/pnpm-lock.yaml
+
+      - run: pnpm --dir site install --frozen-lockfile
+
+      - run: pnpm --dir site build
+
+      - uses: actions/upload-pages-artifact@v5
+        with:
+          path: site/dist
+
+  deploy:
+    needs: build
+    runs-on: ubuntu-latest
+    permissions:
+      pages: write
+      id-token: write
+    environment:
+      name: github-pages
+      url: ${{ steps.deployment.outputs.page_url }}
+    steps:
+      - id: deployment
+        uses: actions/deploy-pages@v5

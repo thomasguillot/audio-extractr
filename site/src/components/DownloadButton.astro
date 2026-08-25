@@ -1,0 +1,64 @@
+<a class="download" data-download href="https://github.com/thomasguillot/audio-extractr/releases/latest">
+  <svg viewBox="0 0 16 16" fill="currentColor" aria-hidden="true">
+    <path d="M8 1a.75.75 0 0 1 .75.75v7.19l2.22-2.22a.75.75 0 1 1 1.06 1.06l-3.5 3.5a.75.75 0 0 1-1.06 0l-3.5-3.5a.75.75 0 0 1 1.06-1.06l2.22 2.22V1.75A.75.75 0 0 1 8 1Z" />
+    <path d="M2.75 12a.75.75 0 0 1 .75.75v.75c0 .414.336.75.75.75h7.5a.75.75 0 0 0 .75-.75v-.75a.75.75 0 0 1 1.5 0v.75A2.25 2.25 0 0 1 12.5 15.75h-9A2.25 2.25 0 0 1 1.25 13.5v-.75A.75.75 0 0 1 2 12Z" />
+  </svg>
+  Download for macOS
+</a>
+
+<script>
+  const buttons = document.querySelectorAll<HTMLAnchorElement>("[data-download]");
+
+  async function pointAtLatestDmg() {
+    if (buttons.length === 0) return;
+    try {
+      const response = await fetch("https://api.github.com/repos/thomasguillot/audio-extractr/releases/latest", {
+        headers: { Accept: "application/vnd.github+json" },
+      });
+      if (!response.ok) return;
+      const release = (await response.json()) as { assets?: { name: string; browser_download_url: string }[] };
+      const dmg = release.assets?.find((asset) => asset.name.endsWith(".dmg"));
+      if (dmg && dmg.browser_download_url.startsWith("https://github.com/")) {
+        buttons.forEach((button) => (button.href = dmg.browser_download_url));
+      }
+    } catch {
+      // The static /releases/latest link is the fallback.
+    }
+  }
+
+  pointAtLatestDmg();
+</script>
+
+<style>
+  .download {
+    display: inline-flex;
+    align-items: center;
+    gap: 10px;
+    padding: 13px 22px;
+    border: 1px solid var(--link);
+    border-radius: var(--radius-sm);
+    background: var(--accent);
+    color: var(--on-accent);
+    font-size: 1rem;
+    font-weight: 560;
+    letter-spacing: -0.01em;
+    text-decoration: none;
+    transition:
+      transform 0.14s ease-out,
+      filter 0.14s ease-out;
+  }
+
+  .download:hover {
+    transform: translateY(-1px);
+    filter: brightness(1.06);
+  }
+
+  .download:active {
+    transform: translateY(0);
+  }
+
+  .download svg {
+    width: 16px;
+    height: 16px;
+  }
+</style>

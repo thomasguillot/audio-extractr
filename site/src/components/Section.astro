@@ -1,0 +1,39 @@
+---
+interface Props {
+  id: string;
+  title: string;
+  lede?: string;
+  class?: string;
+}
+
+const { id, title, lede, class: className } = Astro.props;
+---
+
+<section id={id} class:list={["section", className]} data-reveal aria-labelledby={`${id}-title`}>
+  <div class="shell">
+    <div class="grid head">
+      <h2 id={`${id}-title`} class="span-head">{title}</h2>
+      {lede && <p class="lede span-body">{lede}</p>}
+    </div>
+    <div class="grid body">
+      <slot />
+    </div>
+  </div>
+</section>
+
+<style>
+  .section {
+    padding-top: var(--section);
+  }
+
+  .head {
+    --row-gap: 0.75rem;
+    border-top: 1px solid var(--line);
+    padding-top: var(--section-lead);
+    align-items: start;
+  }
+
+  .body {
+    margin-top: clamp(2rem, 4vw, 3.5rem);
+  }
+</style>

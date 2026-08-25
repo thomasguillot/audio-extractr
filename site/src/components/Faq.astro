@@ -1,0 +1,137 @@
+---
+import Section from "./Section.astro";
+
+const faqs = [
+  {
+    q: "Why is the app unsigned?",
+    a: "Signing needs an Apple Developer Program membership, a paid yearly subscription. Audio Extractr is a free side project, so it ships unsigned and macOS asks you to approve it once. The source is public if you'd rather build it yourself.",
+  },
+  {
+    q: "Which links work?",
+    a: "Anything yt-dlp supports, which is most places that host video or audio. If a link fails, the error shows yt-dlp's own output so you can see why.",
+    link: {
+      label: "The full list yt-dlp supports",
+      href: "https://github.com/yt-dlp/yt-dlp/blob/master/supportedsites.md",
+    },
+  },
+  {
+    q: "Is this legal?",
+    a: "That depends on what you download, where you are, and the terms of the service you got it from. Audio Extractr does not make that call for you: it fetches what you point it at. Make sure you have the right to keep a copy.",
+  },
+  {
+    q: "Where do my files go?",
+    a: "Downloads, by default. Change the folder in Settings. Names never clash: a second \"Song.mp3\" becomes \"Song 2.mp3\".",
+  },
+  {
+    q: "How do updates work?",
+    a: "The app checks GitHub Releases in the background when it's idle and shows the release notes when there's a new version. You choose when to install. yt-dlp updates the same way, verified against the release's published checksums.",
+  },
+  {
+    q: "Does it track me?",
+    a: "No. The only network traffic is the link you paste and the update checks on GitHub. No analytics, no crash reporting, no account, and nothing left running in the background.",
+  },
+  {
+    q: "Can I build it myself?",
+    a: "Yes. Clone the repo, run the script that fetches yt-dlp and ffmpeg, generate the Xcode project with xcodegen, and build. It's Swift and SwiftUI, MIT-licensed.",
+  },
+];
+---
+
+<Section
+  id="faq"
+  title="Questions"
+  lede="What people ask before they download it, from why macOS complains to where your files end up."
+>
+  <div class="faqs span-body">
+    {
+      faqs.map((item, index) => (
+        <details class="faq" open={index === 0}>
+          <summary class="title">{item.q}</summary>
+          <p>{item.a}</p>
+          {item.link && (
+            <p class="more">
+              <a
+                href={item.link.href}
+                target="_blank"
+                rel="noopener noreferrer"
+                aria-label={`${item.link.label}, opens in a new tab`}
+              >
+                {item.link.label}
+                <span class="ext" aria-hidden="true">&#8599;</span>
+              </a>
+            </p>
+          )}
+        </details>
+      ))
+    }
+  </div>
+</Section>
+
+<script>
+  addEventListener("beforeprint", () => {
+    document.querySelectorAll<HTMLDetailsElement>(".faq").forEach((row) => {
+      row.open = true;
+    });
+  });
+</script>
+
+<style>
+  .faqs {
+    max-width: none;
+  }
+
+  .faq {
+    border-top: 1px solid var(--line);
+  }
+
+  summary {
+    display: flex;
+    align-items: baseline;
+    justify-content: space-between;
+    gap: 16px;
+    padding-block: 18px;
+    cursor: pointer;
+    list-style: none;
+  }
+
+  summary::-webkit-details-marker {
+    display: none;
+  }
+
+  summary::after {
+    content: "";
+    flex: none;
+    width: 7px;
+    height: 7px;
+    border-right: 1.5px solid var(--muted);
+    border-bottom: 1.5px solid var(--muted);
+    transform: rotate(-45deg);
+    transition: transform 0.2s ease-out;
+  }
+
+  .faq[open] summary::after {
+    transform: rotate(45deg);
+  }
+
+  .faq p {
+    max-width: 65ch;
+    margin: 0;
+    padding-bottom: 22px;
+    color: var(--muted);
+  }
+
+  .faq p:has(+ .more) {
+    padding-bottom: 10px;
+  }
+
+  .more a {
+    font-weight: 560;
+  }
+
+  .ext {
+    display: inline-block;
+    margin-left: 4px;
+    font-size: 0.9em;
+    text-decoration: none;
+  }
+</style>

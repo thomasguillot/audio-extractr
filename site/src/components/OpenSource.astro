@@ -1,0 +1,88 @@
+---
+import Section from "./Section.astro";
+
+const points = [
+  {
+    title: "MIT-licensed",
+    body: "The whole app, every commit, is on GitHub under the MIT license. Read it, fork it, build it.",
+    links: [{ label: "Source on GitHub", href: "https://github.com/thomasguillot/audio-extractr" }],
+  },
+  {
+    title: "No telemetry, no account",
+    body: "The only network traffic is the link you paste, and the checks on GitHub for app and yt-dlp updates. No analytics, no crash reporting, nothing to sign in to.",
+    links: [],
+  },
+  {
+    title: "Built on open tools",
+    body: "yt-dlp fetches, ffmpeg decodes and encodes. Both run as separate processes, never linked into the app, and both are credited in the acknowledgements.",
+    links: [
+      { label: "yt-dlp", href: "https://github.com/yt-dlp/yt-dlp" },
+      { label: "FFmpeg", href: "https://ffmpeg.org" },
+      {
+        label: "Acknowledgements",
+        href: "https://github.com/thomasguillot/audio-extractr/blob/main/ACKNOWLEDGEMENTS.md",
+      },
+    ],
+  },
+  {
+    title: "No Developer Program",
+    body: "It ships unsigned rather than behind a paid Apple membership, which is why macOS asks you to approve it once. The steps are below.",
+    links: [{ label: "How to install", href: "#install" }],
+  },
+];
+---
+
+<Section
+  id="open-source"
+  title="Free. Open source. Yours."
+  lede="No subscription, no account, no tracking. A native Mac app you can read the source of."
+>
+  <ul class="points grid span-all" role="list">
+    {
+      points.map((point) => (
+        <li class="span-half">
+          <h3 class="title">{point.title}</h3>
+          <p>{point.body}</p>
+          {point.links.length > 0 && (
+            <p class="links">
+              {point.links.map((link) => (
+                <a href={link.href}>{link.label}</a>
+              ))}
+            </p>
+          )}
+        </li>
+      ))
+    }
+  </ul>
+</Section>
+
+<style>
+  .points {
+    --row-gap: 0;
+    list-style: none;
+    margin: 0;
+    padding: 0;
+  }
+
+  .points li {
+    max-width: none;
+    border-top: 1px solid var(--line);
+    padding: 20px 0 24px;
+  }
+
+  h3 {
+    margin-bottom: 6px;
+  }
+
+  p {
+    color: var(--muted);
+  }
+
+  .links {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 6px 20px;
+    margin-top: 10px;
+    font-weight: 600;
+  }
+</style>

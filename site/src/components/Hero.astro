@@ -1,0 +1,153 @@
+---
+import DownloadButton from "./DownloadButton.astro";
+import Screenshot from "./Screenshot.astro";
+import { readFileSync } from "node:fs";
+import { resolve } from "node:path";
+
+const base = import.meta.env.BASE_URL.replace(/\/$/, "");
+
+let version: string | undefined;
+try {
+  const projectYml = readFileSync(resolve(process.cwd(), "../App/project.yml"), "utf8");
+  version = projectYml.match(/MARKETING_VERSION:\s*"([^"]+)"/)?.[1];
+} catch {
+  version = undefined;
+}
+---
+
+<header class="hero">
+  <div class="shell">
+    <div class="grid">
+      <div class="copy">
+        <p class="wordmark" data-hero>
+          <img src={`${base}/icon.svg`} alt="" width="32" height="32" />
+          Audio Extractr
+          {version && <span class="version">{version}</span>}
+        </p>
+        <h1 data-hero>Grab audio from the web.</h1>
+        <p class="lede" data-hero>
+          Paste a link or drop a file, trim it on the waveform, set the speed, and save a clean MP3 to disk.
+        </p>
+        <p class="requirements label" data-hero>
+          Free and open source<span class="sep"> · </span>macOS 26+<span class="sep"> · </span>Apple
+          Silicon<span class="sep"> · </span>MIT
+        </p>
+        <div class="cta" data-hero>
+          <DownloadButton />
+          <a class="ghost" href="https://github.com/thomasguillot/audio-extractr">View on GitHub</a>
+        </div>
+      </div>
+      <div class="shot">
+        <Screenshot
+          name="edit"
+          alt="The Audio Extractr edit screen: a waveform with two trim handles around the selected part, a speed slider, a filename field and an Extract MP3 button."
+          width={640}
+          height={334}
+          loading="eager"
+          priority
+        />
+      </div>
+    </div>
+  </div>
+</header>
+
+<script>
+  import { animate, stagger } from "motion";
+  import { SPRING_CRISP, STAGGER_DELAY, prefersReducedMotion } from "../motion";
+
+  function enterHero() {
+    if (prefersReducedMotion()) return;
+    const items = document.querySelectorAll<HTMLElement>("[data-hero]");
+    items.forEach((item) => {
+      item.style.opacity = "0";
+      item.style.transform = "translateY(10px)";
+    });
+    animate(
+      items,
+      { opacity: 1, transform: "translateY(0px)" },
+      { ...SPRING_CRISP, delay: stagger(STAGGER_DELAY) },
+    );
+  }
+
+  enterHero();
+</script>
+
+<style>
+  .hero {
+    padding-top: clamp(3rem, 7vw, 5.5rem);
+  }
+
+  .copy,
+  .shot {
+    grid-column: 1 / -1;
+  }
+
+  .copy {
+    display: flex;
+    flex-direction: column;
+    align-items: flex-start;
+    gap: clamp(1rem, 2vw, 1.5rem);
+  }
+
+  @media (min-width: 900px) {
+    .hero {
+      padding-top: 11rem;
+      padding-bottom: 7.5rem;
+    }
+
+    .hero .grid {
+      align-items: end;
+    }
+
+    .copy {
+      grid-column: 1 / span 5;
+    }
+
+    .shot {
+      grid-column: 6 / span 7;
+      max-width: none;
+      margin-top: 0;
+    }
+  }
+
+  .wordmark {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    margin: 0;
+    font-size: 1.125rem;
+    font-weight: 560;
+    letter-spacing: -0.012em;
+  }
+
+  .version {
+    color: var(--muted);
+    font-weight: 400;
+    font-variant-numeric: tabular-nums;
+  }
+
+  .cta {
+    display: flex;
+    flex-wrap: wrap;
+    align-items: center;
+    gap: 16px 28px;
+  }
+
+  .ghost {
+    font-weight: 560;
+  }
+
+  .requirements {
+    color: var(--muted);
+    max-width: none;
+  }
+
+  .sep {
+    opacity: 0.6;
+  }
+
+  .shot {
+    max-width: 40rem;
+    margin-top: clamp(1.5rem, 4vw, 3rem);
+  }
+</style>

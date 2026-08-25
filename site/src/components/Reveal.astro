@@ -1,0 +1,45 @@
+<script>
+  import { animate, inView } from "motion";
+  import { SPRING_CRISP, SPRING_SOFT, prefersReducedMotion } from "../motion";
+
+  function revealSections() {
+    if (prefersReducedMotion()) return;
+
+    const sections = document.querySelectorAll<HTMLElement>("[data-reveal]");
+    sections.forEach((section) => {
+      if (section.getBoundingClientRect().top < window.innerHeight * 0.9) return;
+      section.style.opacity = "0";
+      section.style.transform = "translateY(14px)";
+      const stop = inView(
+        section,
+        () => {
+          stop();
+          animate(section, { opacity: 1, transform: "translateY(0px)" }, SPRING_CRISP);
+        },
+        { margin: "0px 0px -10% 0px" },
+      );
+    });
+  }
+
+  function revealImages() {
+    if (prefersReducedMotion()) return;
+
+    const shots = document.querySelectorAll<HTMLElement>("[data-reveal-image]");
+    shots.forEach((shot) => {
+      if (shot.getBoundingClientRect().top < window.innerHeight * 0.9) return;
+      shot.style.opacity = "0";
+      shot.style.transform = "translateY(20px) scale(0.985)";
+      const stop = inView(
+        shot,
+        () => {
+          stop();
+          animate(shot, { opacity: 1, transform: "translateY(0px) scale(1)" }, SPRING_SOFT);
+        },
+        { margin: "0px 0px -15% 0px" },
+      );
+    });
+  }
+
+  revealSections();
+  revealImages();
+</script>

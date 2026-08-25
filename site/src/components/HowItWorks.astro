@@ -1,0 +1,89 @@
+---
+import Screenshot from "./Screenshot.astro";
+import Section from "./Section.astro";
+
+const steps = [
+  {
+    name: "input",
+    title: "Paste a link or drop a file",
+    body: "Paste a link and the audio is fetched for you. Or drop any audio or video file straight onto the window.",
+    width: 640,
+    height: 282,
+    alt: "The Audio Extractr input screen: a field for a link with a Fetch button, and a drop zone for an audio or video file.",
+  },
+  {
+    name: "edit",
+    title: "Trim and set the speed",
+    body: "Drag the handles on the waveform to keep just the part you want. Preview it, and speed it up or slow it down with the pitch preserved.",
+    width: 640,
+    height: 334,
+    alt: "The edit screen: a waveform with two trim handles around the selected part, a speed slider, and an Extract MP3 button.",
+  },
+  {
+    name: "done",
+    title: "Save as MP3",
+    body: "One click writes a clean MP3 to your folder. No dialog, no overwrites: a second file with the same name gets a number.",
+    width: 640,
+    height: 206,
+    alt: "The done screen: a green check, the saved filename, and Show in Finder and Extract Another buttons.",
+  },
+] as const;
+---
+
+<Section
+  id="how"
+  title="How it works"
+  lede="Three steps from a link or a file to an MP3 on disk, with nothing to configure before you start."
+>
+  <ol class="steps span-all" role="list">
+    {
+      steps.map((step, index) => (
+        <li class="grid step">
+          <h3 class="title span-head">
+            <span class="num">{index + 1}</span>
+            {step.title}
+          </h3>
+          <div class="span-body">
+            <Screenshot name={step.name} alt={step.alt} width={step.width} height={step.height} loading="lazy" />
+            <p>{step.body}</p>
+          </div>
+        </li>
+      ))
+    }
+  </ol>
+</Section>
+
+<style>
+  .steps {
+    list-style: none;
+    margin: 0;
+    padding: 0;
+  }
+
+  .step {
+    --row-gap: 1rem;
+    max-width: none;
+    padding-block: clamp(1.75rem, 3.5vw, 2.75rem);
+    align-items: start;
+  }
+
+  .step + .step {
+    border-top: 1px solid var(--line);
+  }
+
+  .title {
+    display: flex;
+    gap: 24px;
+    align-items: baseline;
+  }
+
+  .num {
+    color: var(--accent);
+    font-variant-numeric: tabular-nums;
+  }
+
+  p {
+    color: var(--muted);
+    margin-top: 16px;
+  }
+</style>
