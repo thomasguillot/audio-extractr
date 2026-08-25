@@ -1,3 +1,5 @@
+<img src="site/public/icon-512.png" alt="" width="96" height="96">
+
 # Audio Extractr
 
 A native macOS app that grabs audio from the web: paste a link or drop a file,
