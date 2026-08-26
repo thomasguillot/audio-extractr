@@ -9,9 +9,10 @@
   --text: #1b1d22;
   --muted: #656a73;
 
-  --accent: #3f434b;
+  --blue: #007aff;
+  --accent: #006cf0;
   --on-accent: #ffffff;
-  --link: #2f4fb8;
+  --link: #006cf0;
 
   --shadow-window: 0 1px 2px rgb(20 22 26 / 0.05), 0 10px 28px rgb(20 22 26 / 0.08);
 
@@ -31,16 +32,10 @@
   --font-mono: ui-monospace, "SF Mono", SFMono-Regular, Menlo, monospace;
 }
 
-@supports (color: AccentColor) {
+@supports (color: oklch(from red 0.5 c h)) {
   :root {
-    --accent: AccentColor;
-    --on-accent: AccentColorText;
-  }
-}
-
-@supports (color: oklch(from AccentColor 0.45 c h)) {
-  :root {
-    --link: oklch(from AccentColor 0.45 c h);
+    --accent: oklch(from var(--blue) 0.56 c h);
+    --link: oklch(from var(--blue) 0.56 c h);
   }
 }
 
@@ -53,22 +48,13 @@
     --line-strong: #3a3e45;
     --text: #ecedef;
     --muted: #9ba0a8;
-    --accent: #7e8590;
-    --on-accent: #ffffff;
-    --link: #9ab0ff;
+    --link: #1b86ff;
     --shadow-window: 0 1px 2px rgb(0 0 0 / 0.4), 0 14px 36px rgb(0 0 0 / 0.45);
   }
 
-  @supports (color: AccentColor) {
+  @supports (color: oklch(from red 0.5 c h)) {
     :root {
-      --accent: AccentColor;
-      --on-accent: AccentColorText;
-    }
-  }
-
-  @supports (color: oklch(from AccentColor 0.72 c h)) {
-    :root {
-      --link: oklch(from AccentColor 0.72 c h);
+      --link: oklch(from var(--blue) 0.64 c h);
     }
   }
 }
@@ -265,8 +251,23 @@ main:focus {
 }
 
 @media print {
+  :root {
+    color-scheme: light;
+    --bg: #ffffff;
+    --surface: #ffffff;
+    --surface-2: #ffffff;
+    --line: #cccccc;
+    --line-strong: #999999;
+    --text: #000000;
+    --muted: #333333;
+    --accent: #006cf0;
+    --on-accent: #ffffff;
+    --link: #006cf0;
+  }
+
   [data-reveal],
-  [data-reveal-image] {
+  [data-reveal-image],
+  [data-hero] {
     opacity: 1 !important;
     transform: none !important;
   }
