@@ -39,10 +39,18 @@
     font-weight: 500;
     letter-spacing: -0.006em;
     text-decoration: none;
-    transition: filter 160ms ease;
+    transition: filter 160ms ease, background 160ms ease;
   }
 
-  .download:hover {
-    filter: brightness(1.06);
+  @supports not (color: oklch(from red 0.5 c h)) {
+    .download:hover {
+      filter: brightness(0.88);
+    }
+  }
+
+  @supports (color: oklch(from red 0.5 c h)) {
+    .download:hover {
+      background: oklch(from var(--accent) calc(l - 0.06) c h);
+    }
   }
 </style>
