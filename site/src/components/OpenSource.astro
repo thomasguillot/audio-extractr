@@ -8,9 +8,9 @@ const points = [
     links: [{ label: "Source on GitHub", href: "https://github.com/thomasguillot/audio-extractr" }],
   },
   {
-    title: "No telemetry, no account",
-    body: "The only network traffic is the link you paste, the checks on GitHub for app and yt-dlp updates, and the speech model Apple downloads the first time you transcribe in a new language. No analytics, no crash reporting, nothing to sign in to.",
-    links: [],
+    title: "No telemetry",
+    body: "No analytics and no crash reporting. Everything the app sends is listed below.",
+    links: [{ label: "What it sends", href: "#privacy" }],
   },
   {
     title: "Built on open tools",
@@ -26,7 +26,7 @@ const points = [
   },
   {
     title: "No Developer Program",
-    body: "It ships unsigned rather than behind a paid Apple membership, which is why macOS asks you to approve it once. The steps are below.",
+    body: "It ships unsigned rather than behind a paid Apple membership.",
     links: [{ label: "How to install", href: "#install" }],
   },
 ];
@@ -34,8 +34,8 @@ const points = [
 
 <Section
   id="open-source"
-  title="Free. Open source. Yours."
-  lede="No subscription, no account, no tracking. A native Mac app you can read the source of."
+  title="Free and open source."
+  lede="Nothing to buy and nothing to sign up for."
 >
   <ul class="points grid span-all" role="list">
     {
