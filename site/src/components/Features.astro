@@ -3,12 +3,8 @@ import Section from "./Section.astro";
 
 const features = [
   {
-    title: "Paste a link",
-    body: "Pulls the audio from most video and audio links, powered by yt-dlp.",
-  },
-  {
-    title: "Or drop a file",
-    body: "Any audio or video file ffmpeg can read. Drag it in or browse.",
+    title: "Paste a link or drop a file",
+    body: "Pulls the audio from most video and audio links with yt-dlp, or takes any file ffmpeg can read.",
   },
   {
     title: "Trim on the waveform",
@@ -61,11 +57,21 @@ const features = [
   .features li {
     max-width: none;
     border-top: 1px solid var(--line);
-    padding: 20px 0 24px;
+    padding: var(--col-gap) 0;
+  }
+
+  .features li:last-child {
+    padding-bottom: 0;
+  }
+
+  @media (min-width: 900px) {
+    .features li:nth-last-child(2):nth-child(odd) {
+      padding-bottom: 0;
+    }
   }
 
   h3 {
-    margin-bottom: 6px;
+    margin-bottom: 1rem;
   }
 
   p {

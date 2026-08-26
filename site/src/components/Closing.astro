@@ -1,0 +1,88 @@
+---
+import DownloadButton from "./DownloadButton.astro";
+import { readFileSync } from "node:fs";
+import { resolve } from "node:path";
+
+let version: string | undefined;
+try {
+  const projectYml = readFileSync(resolve(process.cwd(), "../App/project.yml"), "utf8");
+  version = projectYml.match(/MARKETING_VERSION:\s*"([^"]+)"/)?.[1];
+} catch {
+  version = undefined;
+}
+
+const spec = [
+  ...(version ? [{ term: "Version", value: version }] : []),
+  { term: "License", value: "MIT" },
+  { term: "Requires", value: "macOS 26 or later" },
+  { term: "Architecture", value: "Apple silicon" },
+];
+---
+
+<section id="privacy" class="closing" data-reveal aria-labelledby="privacy-title">
+  <div class="shell">
+    <div class="panel grid">
+      <div class="span-head">
+        <h2 id="privacy-title">Your audio never leaves your Mac.</h2>
+        <p class="lede">
+          Trimming, encoding, and transcription all happen on your machine, with no account and no
+          analytics. The only network traffic is the link you paste, the update check on GitHub, and
+          the speech model Apple downloads the first time you transcribe in a new language.
+        </p>
+      </div>
+      <div class="span-body">
+        <DownloadButton />
+        <dl class="spec">
+          {
+            spec.map((row) => (
+              <div class="spec-row">
+                <dt>{row.term}</dt>
+                <dd>{row.value}</dd>
+              </div>
+            ))
+          }
+        </dl>
+      </div>
+    </div>
+  </div>
+</section>
+
+<style>
+  .closing {
+    padding-top: var(--section);
+  }
+
+  .panel {
+    border-radius: var(--radius-lg);
+    background: var(--surface-2);
+    padding: clamp(1.75rem, 4vw, 3.5rem);
+    align-items: start;
+  }
+
+  .lede {
+    margin-top: 1rem;
+  }
+
+  .spec {
+    margin: clamp(1.5rem, 3vw, 2rem) 0 0;
+    font-size: 0.875rem;
+    line-height: 1.45;
+  }
+
+  .spec-row {
+    display: grid;
+    grid-template-columns: minmax(0, 9rem) minmax(0, 1fr);
+    gap: 1rem;
+    border-top: 1px solid var(--line-strong);
+    padding-block: 0.75rem;
+  }
+
+  .spec-row dt {
+    color: var(--muted);
+  }
+
+  .spec-row dd {
+    margin: 0;
+    font-variant-numeric: tabular-nums;
+  }
+</style>

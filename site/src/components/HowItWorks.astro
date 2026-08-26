@@ -8,23 +8,23 @@ const steps = [
     title: "Paste a link or drop a file",
     body: "Paste a link and the audio is fetched for you. Or drop any audio or video file straight onto the window.",
     width: 640,
-    height: 282,
+    height: 402,
     alt: "The Audio Extractr input screen: a field for a link with a Fetch button, and a drop zone for an audio or video file.",
   },
   {
     name: "edit",
     title: "Trim and set the speed",
-    body: "Drag the handles on the waveform to keep just the part you want. Preview it, and speed it up or slow it down with the pitch preserved.",
+    body: "Drag the handles on the waveform to keep just the part you want. Preview it, set the speed, and check the box to save an experimental transcript too.",
     width: 640,
-    height: 334,
-    alt: "The edit screen: a waveform with two trim handles around the selected part, a speed slider, and an Extract MP3 button.",
+    height: 402,
+    alt: "The edit screen: a waveform with two trim handles around the selected part, a speed slider, a Save transcript checkbox with a language menu, and an Extract MP3 button.",
   },
   {
     name: "done",
     title: "Save as MP3",
     body: "One click writes a clean MP3 to your folder. No dialog, no overwrites: a second file with the same name gets a number.",
     width: 640,
-    height: 206,
+    height: 402,
     alt: "The done screen: a green check, the saved filename, and Show in Finder and Extract Another buttons.",
   },
 ] as const;
@@ -63,12 +63,16 @@ const steps = [
   .step {
     --row-gap: 1rem;
     max-width: none;
-    padding-block: clamp(1.75rem, 3.5vw, 2.75rem);
+    padding-block: var(--col-gap);
     align-items: start;
   }
 
   .step + .step {
     border-top: 1px solid var(--line);
+  }
+
+  .step:last-child {
+    padding-bottom: 0;
   }
 
   .title {
