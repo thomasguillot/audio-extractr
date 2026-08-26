@@ -3,16 +3,12 @@ import Section from "./Section.astro";
 
 const features = [
   {
-    title: "Paste a link",
-    body: "Pulls the audio from most video and audio links, powered by yt-dlp.",
-  },
-  {
-    title: "Or drop a file",
-    body: "Any audio or video file ffmpeg can read. Drag it in or browse.",
+    title: "Links and files",
+    body: "Pulls the audio from most video and audio links with yt-dlp, or takes any file ffmpeg can read.",
   },
   {
     title: "Trim on the waveform",
-    body: "Drag the handles to keep just the part you want. They snap to the playhead, and Space plays and pauses the preview.",
+    body: "The handles snap to the playhead, and Space plays and pauses the preview.",
   },
   {
     title: "Speed",
@@ -20,15 +16,15 @@ const features = [
   },
   {
     title: "MP3 out",
-    body: "Clean 192 kbps MP3, saved to the folder you choose. Names never clash.",
+    body: "Clean 192 kbps MP3, saved to your Downloads folder or wherever you point it.",
   },
   {
     title: "Transcript (experimental)",
-    body: "Check the box before extracting and the text lands beside the MP3, as Markdown or plain text. It runs on your Mac, so nothing is uploaded.",
+    body: "Off by default. Turn it on before extracting and you get Markdown or plain text next to the audio, written on your Mac.",
   },
   {
     title: "Self-updating",
-    body: "Updates itself from GitHub Releases and keeps yt-dlp current, so upstream changes don't break your downloads.",
+    body: "Updates itself from GitHub Releases and keeps yt-dlp current, so it keeps working when sites change.",
   },
 ];
 ---
@@ -36,7 +32,7 @@ const features = [
 <Section
   id="features"
   title="What it does"
-  lede="One small window that does the whole job: paste or drop, trim, set the speed, and save."
+  lede="A short list on purpose. The app has one job, and everything it needs sits in one window."
 >
   <ul class="features grid span-all" role="list">
     {
@@ -61,11 +57,21 @@ const features = [
   .features li {
     max-width: none;
     border-top: 1px solid var(--line);
-    padding: 20px 0 24px;
+    padding: var(--col-gap) 0;
+  }
+
+  .features li:last-child {
+    padding-bottom: 0;
+  }
+
+  @media (min-width: 900px) {
+    .features li:nth-last-child(2):nth-child(odd) {
+      padding-bottom: 0;
+    }
   }
 
   h3 {
-    margin-bottom: 6px;
+    margin-bottom: 1rem;
   }
 
   p {

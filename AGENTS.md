@@ -4,10 +4,11 @@ This file is the authoritative agent/AI guide for this repo. CLAUDE.md imports i
 
 ## What this project is
 
-A native macOS app that grabs audio from the web or local files: paste a URL or drop a
-media file, optionally trim and adjust speed, save as MP3. Bundles yt-dlp + ffmpeg
-(separate child processes, never linked). Targets macOS 26 (Tahoe)+, Apple Silicon only.
-Unsigned — no Apple Developer Program, no signing, no notarization, ever. MIT.
+A native macOS app that turns video into MP3, from a link or a local file: paste a URL
+or drop a media file, optionally trim and adjust speed, save as MP3, with an optional
+on-device transcript. Bundles yt-dlp + ffmpeg (separate child processes, never linked).
+Targets macOS 26 (Tahoe)+, Apple Silicon only. Unsigned — no Apple Developer Program,
+no signing, no notarization, ever. MIT.
 
 ## Repo layout
 

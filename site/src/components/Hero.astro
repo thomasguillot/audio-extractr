@@ -24,13 +24,14 @@ try {
           Audio Extractr
           {version && <span class="version">{version}</span>}
         </p>
-        <h1 data-hero>Grab audio from the web.</h1>
+        <h1 data-hero>Turn any video into an MP3.</h1>
         <p class="lede" data-hero>
-          Paste a link or drop a file, trim it on the waveform, set the speed, and save a clean MP3 to disk.
+          Paste a link or drop a file, trim it, set the speed, and save an MP3, plus a transcript if
+          you want one.
         </p>
         <p class="requirements label" data-hero>
-          Free and open source<span class="sep"> · </span>macOS 26+<span class="sep"> · </span>Apple
-          Silicon<span class="sep"> · </span>MIT
+          Free<span class="sep"> · </span>MIT licensed<span class="sep"> · </span>Apple
+          silicon<span class="sep"> · </span>macOS 26 or later
         </p>
         <div class="cta" data-hero>
           <DownloadButton />
@@ -40,9 +41,9 @@ try {
       <div class="shot">
         <Screenshot
           name="edit"
-          alt="The Audio Extractr edit screen: a waveform with two trim handles around the selected part, a speed slider, a filename field and an Extract MP3 button."
+          alt="The Audio Extractr edit screen: a filename field, a waveform with two trim handles around the selected part, a speed slider, a Save transcript checkbox with a language menu, and an Extract MP3 button."
           width={640}
-          height={334}
+          height={402}
           loading="eager"
           priority
         />
@@ -134,7 +135,9 @@ try {
   }
 
   .ghost {
-    font-weight: 560;
+    font-size: 0.9375rem;
+    font-weight: 500;
+    letter-spacing: -0.006em;
   }
 
   .requirements {

@@ -4,7 +4,7 @@ import Section from "./Section.astro";
 const faqs = [
   {
     q: "Why is the app unsigned?",
-    a: "Signing needs an Apple Developer Program membership, a paid yearly subscription. Audio Extractr is a free side project, so it ships unsigned and macOS asks you to approve it once. The source is public if you'd rather build it yourself.",
+    a: "Signing needs an Apple Developer Program membership, a paid yearly subscription. Audio Extractr is a free side project, so it ships unsigned and macOS asks you to approve it once.",
   },
   {
     q: "Which links work?",
@@ -28,7 +28,7 @@ const faqs = [
   },
   {
     q: "Does it track me?",
-    a: "No. The only network traffic is the link you paste, the update checks on GitHub, and, the first time you transcribe in a new language, the speech model Apple downloads to your Mac. No analytics, no crash reporting, no account, and nothing left running in the background.",
+    a: "No. The only network traffic is the link you paste, the update checks on GitHub for the app and yt-dlp, and, the first time you transcribe in a new language, the speech model Apple downloads to your Mac. No analytics, no crash reporting, no account, and no background agent once you quit.",
   },
   {
     q: "Can I build it myself?",
@@ -44,7 +44,7 @@ const faqs = [
 <Section
   id="faq"
   title="Questions"
-  lede="What people ask before they download it, from why macOS complains to where your files end up."
+  lede="Why macOS complains, where your files end up, and what the app sends."
 >
   <div class="faqs span-body">
     {
@@ -82,18 +82,20 @@ const faqs = [
 <style>
   .faqs {
     max-width: none;
+    margin-bottom: calc(var(--col-gap) * -1);
   }
 
   .faq {
+    --chevron: 15.5px;
+    --chevron-gap: 24px;
     border-top: 1px solid var(--line);
   }
 
   summary {
     display: flex;
     align-items: baseline;
-    justify-content: space-between;
-    gap: 16px;
-    padding-block: 18px;
+    gap: var(--chevron-gap);
+    padding-block: var(--col-gap);
     cursor: pointer;
     list-style: none;
   }
@@ -102,26 +104,36 @@ const faqs = [
     display: none;
   }
 
-  summary::after {
-    content: "";
-    flex: none;
-    width: 7px;
-    height: 7px;
-    border-right: 1.5px solid var(--muted);
-    border-bottom: 1.5px solid var(--muted);
-    transform: rotate(-45deg);
-    transition: transform 0.2s ease-out;
+  summary:focus-visible {
+    outline-offset: -2px;
   }
 
-  .faq[open] summary::after {
-    transform: rotate(45deg);
+  summary::before {
+    content: "";
+    flex: none;
+    align-self: center;
+    width: var(--chevron);
+    height: var(--chevron);
+    background: var(--link);
+    mask: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 16 16'%3E%3Cpath d='M5.5 3 L10.5 8 L5.5 13' fill='none' stroke='%23000' stroke-width='2' stroke-linecap='round' stroke-linejoin='round'/%3E%3C/svg%3E")
+      center / contain no-repeat;
+    transform: rotate(90deg);
+  }
+
+  .faq[open] summary::before {
+    transform: rotate(-90deg);
   }
 
   .faq p {
     max-width: 65ch;
     margin: 0;
-    padding-bottom: 22px;
+    padding-left: calc(var(--chevron) + var(--chevron-gap));
+    padding-bottom: var(--col-gap);
     color: var(--muted);
+  }
+
+  .faq summary + p {
+    margin-top: calc(1rem - var(--col-gap));
   }
 
   .faq p:has(+ .more) {

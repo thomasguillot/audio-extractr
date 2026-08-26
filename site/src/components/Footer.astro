@@ -1,55 +1,99 @@
 ---
-import DownloadButton from "./DownloadButton.astro";
+const base = import.meta.env.BASE_URL.replace(/\/$/, "");
+const repo = "https://github.com/thomasguillot/audio-extractr";
+const year = String(new Date().getFullYear());
+
+const links = [
+  { label: "GitHub", href: repo },
+  { label: "License", href: `${repo}/blob/main/LICENSE` },
+  { label: "Releases", href: `${repo}/releases` },
+  { label: "Report an issue", href: `${repo}/issues` },
+  { label: "Acknowledgements", href: `${repo}/blob/main/ACKNOWLEDGEMENTS.md` },
+];
 ---
 
 <footer class="footer">
-  <div class="shell">
-    <div class="grid inner">
-      <div class="span-head">
-        <DownloadButton />
-      </div>
-      <nav class="links span-body" aria-label="Project links">
-        <a href="https://github.com/thomasguillot/audio-extractr">GitHub</a>
-        <a href="https://github.com/thomasguillot/audio-extractr/releases">Releases</a>
-        <a href="https://github.com/thomasguillot/audio-extractr/issues">Report an issue</a>
-        <a href="https://github.com/thomasguillot/audio-extractr/blob/main/ACKNOWLEDGEMENTS.md">Acknowledgements</a>
-      </nav>
+  <div class="shell inner">
+    <div class="identity">
+      <img src={`${base}/icon.svg`} alt="" width="24" height="24" />
+      <p>
+        Audio Extractr &middot; &copy; {year} <a class="link" href="https://thomasguillot.com/"
+          >Thomas Guillot<span aria-hidden="true">&nearr;</span></a
+        >
+      </p>
     </div>
+    <nav aria-label="Footer" class="links">
+      {links.map((link) => <a class="link" href={link.href}>{link.label}</a>)}
+    </nav>
   </div>
 </footer>
 
 <style>
   .footer {
     padding-top: var(--section);
-    padding-bottom: calc(var(--section) + 24px);
+    padding-bottom: 3rem;
   }
 
   .inner {
-    border-top: 1px solid var(--line);
-    padding-top: var(--section-lead);
+    display: flex;
+    flex-direction: column;
+    align-items: flex-start;
+    justify-content: space-between;
+    gap: 1.5rem;
+  }
+
+  @media (min-width: 640px) {
+    .inner {
+      flex-direction: row;
+      align-items: center;
+    }
+  }
+
+  .identity {
+    display: flex;
     align-items: center;
+    gap: 0.625rem;
+  }
+
+  .identity img {
+    flex-shrink: 0;
+  }
+
+  .identity p {
+    margin: 0;
+    font-size: 0.875rem;
+    line-height: 1.25rem;
+    color: var(--muted);
   }
 
   .links {
     display: flex;
     flex-wrap: wrap;
-    gap: 12px 24px;
-    align-items: center;
+    column-gap: 1.5rem;
+    row-gap: 0.5rem;
   }
 
-  @media (min-width: 900px) {
-    .links {
-      justify-content: flex-end;
-    }
+  .link {
+    display: inline-block;
+    padding-block: 0.625rem;
+    margin-block: -0.625rem;
+    font-size: 0.875rem;
+    font-weight: 500;
+    letter-spacing: -0.006em;
+    color: var(--link);
+    text-decoration: underline;
+    text-decoration-color: transparent;
+    text-underline-offset: 0.25em;
+    transition: text-decoration-color 160ms ease;
   }
 
-  .links a {
-    color: var(--muted);
-    font-weight: 560;
-    text-decoration: none;
+  .link:hover {
+    text-decoration-color: currentColor;
   }
 
-  .links a:hover {
-    color: var(--text);
+  .link > span[aria-hidden="true"] {
+    display: inline-block;
+    vertical-align: baseline;
+    padding-left: 0.25em;
   }
 </style>
