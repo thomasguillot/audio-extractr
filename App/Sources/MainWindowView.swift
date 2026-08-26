@@ -20,6 +20,19 @@ struct MainWindowView: View {
                 DoneView(savedURL: url)
             }
         }
-        .frame(width: 640)
+        .frame(width: 640, height: 370)
+        .alert(
+            "Transcript not saved",
+            isPresented: Binding(
+                get: { model.transcriptFailure != nil },
+                set: { if !$0 { model.dismissTranscriptFailure() } })
+        ) {
+            Button("OK") { model.dismissTranscriptFailure() }
+        } message: {
+            Text(
+                [model.transcriptFailure, model.transcriptFailureDetail]
+                    .compactMap { $0 }
+                    .joined(separator: "\n\n"))
+        }
     }
 }

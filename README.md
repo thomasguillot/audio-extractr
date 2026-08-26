@@ -22,6 +22,7 @@ between you, the rights holder, and the terms you agreed to.
 - **Or drop a file**: any audio or video file ffmpeg can read.
 - **Trim**: start/end times (`1:23` or `0:01:23` style).
 - **Speed**: 0.25× to 2× without pitch chaos (ffmpeg atempo).
+- **Transcript** (experimental): saved beside the MP3 as Markdown or plain text.
 - **Self-updating**: the app updates itself from GitHub Releases, and keeps
   its bundled yt-dlp current (SHA-verified) so site changes don't break you.
 
