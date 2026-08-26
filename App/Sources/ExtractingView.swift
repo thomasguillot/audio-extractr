@@ -6,10 +6,10 @@ struct ExtractingView: View {
 
     var body: some View {
         VStack(spacing: 14) {
-            Text("Converting…")
+            Text(model.transcribing ? "Writing transcript…" : "Converting…")
                 .font(.headline)
             Group {
-                if let fraction {
+                if let fraction, !model.transcribing {
                     ProgressView(value: fraction)
                 } else {
                     ProgressView().progressViewStyle(.linear)

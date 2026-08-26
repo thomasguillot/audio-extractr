@@ -1,3 +1,4 @@
+import ExtractrKit
 import Foundation
 
 struct Preferences {
@@ -10,6 +11,7 @@ struct Preferences {
         static let lastYtDlpCheckAt = "lastYtDlpCheckAt"
         static let saveFolderPath = "saveFolderPath"
         static let skippedUpdateVersion = "skippedUpdateVersion"
+        static let transcriptFormat = "transcriptFormat"
     }
 
     var autoCheckForUpdates: Bool {
@@ -48,4 +50,15 @@ struct Preferences {
         }
         set { defaults.set(newValue.path, forKey: Keys.saveFolderPath) }
     }
+
+    var transcriptFormat: TranscriptFormat {
+        get {
+            guard let raw = defaults.string(forKey: Keys.transcriptFormat),
+                let format = TranscriptFormat(rawValue: raw)
+            else { return .markdown }
+            return format
+        }
+        set { defaults.set(newValue.rawValue, forKey: Keys.transcriptFormat) }
+    }
+
 }

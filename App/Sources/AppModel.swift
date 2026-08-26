@@ -23,6 +23,8 @@ final class AppModel {
     var speed = 1.0 {
         didSet { player?.setRate(speed) }
     }
+    var saveTranscript = false
+    var transcriptLocaleIdentifier = ""
     var fileName = ""
     private(set) var probe: MediaProbe?
     private(set) var displayTitle = ""
@@ -33,6 +35,10 @@ final class AppModel {
     private(set) var player: PreviewPlayer?
     private(set) var errorMessage: String?
     private(set) var errorDetail: String?
+    private(set) var transcriptFailure: String?
+    private(set) var transcriptFailureDetail: String?
+    private(set) var transcribing = false
+    private(set) var transcriptLocales: [Locale] = []
 
     let tools: ToolLocator
     private let probeService: ProbeService
@@ -40,6 +46,7 @@ final class AppModel {
     private let downloader: AudioDownloader
     private let peakExtractor: PeakExtractor
     private let previewTranscoder: PreviewTranscoder
+    private let transcriber = Transcriber()
     private var sourceFile: URL?
     private var jobDir: URL?
     private var extractionTask: Task<Void, Never>?
@@ -105,6 +112,7 @@ final class AppModel {
     func extract() {
         guard let sourceFile, let jobDir, stage == .edit else { return }
         clearError()
+        dismissTranscriptFailure()
         applyStartText()
         applyEndText()
         guard errorMessage == nil else { return }
@@ -114,38 +122,55 @@ final class AppModel {
         let speed = speed
         let duration = probe?.duration
         extractionTask = Task {
-            do {
-                let plan = ExtractionPlan(
-                    sourceFile: sourceFile, trim: trim, speed: speed, jobDir: jobDir)
-                let tempMP3 = try await extractor.extract(
-                    plan: plan, expectedDuration: duration
-                ) { fraction in
-                    Task { @MainActor [weak self] in
-                        guard let self, case .extracting = self.stage else { return }
-                        self.stage = .extracting(fraction)
-                    }
-                }
-                try Task.checkCancellation()
-                let saved: URL
-                do {
-                    saved = try save(tempMP3: tempMP3)
-                } catch {
-                    stage = .edit
-                    errorMessage = "Couldn't save to your chosen folder. Pick another in Settings."
-                    errorDetail = error.localizedDescription
-                    extractionTask = nil
-                    return
-                }
-                cleanupJob()
-                stage = .done(saved)
-            } catch is CancellationError {
-                if case .extracting = stage { stage = .edit }
-            } catch {
-                if case .extracting = stage { stage = .edit }
-                present(error)
-            }
-            extractionTask = nil
+            await runExtraction(
+                sourceFile: sourceFile, jobDir: jobDir, trim: trim, speed: speed,
+                duration: duration)
         }
+    }
+
+    private func runExtraction(
+        sourceFile: URL, jobDir: URL, trim: TrimRange, speed: Double, duration: Double?
+    ) async {
+        do {
+            let plan = ExtractionPlan(
+                sourceFile: sourceFile, trim: trim, speed: speed, jobDir: jobDir)
+            let tempMP3 = try await extractor.extract(
+                plan: plan, expectedDuration: duration
+            ) { fraction in
+                Task { @MainActor [weak self] in
+                    guard let self, case .extracting = self.stage else { return }
+                    self.stage = .extracting(fraction)
+                }
+            }
+            try Task.checkCancellation()
+            let saved: URL
+            do {
+                saved = try save(tempMP3: tempMP3)
+            } catch {
+                stage = .edit
+                errorMessage = "Couldn't save to your chosen folder. Pick another in Settings."
+                errorDetail = error.localizedDescription
+                extractionTask = nil
+                return
+            }
+            if saveTranscript {
+                transcribing = true
+                await runTranscription(
+                    mp3: saved, sourceFile: sourceFile, trim: trim, speed: speed, jobDir: jobDir)
+                transcribing = false
+            }
+            // A reset during transcription already tore this job down and may have started
+            // another; finishing here would yank the user out of it and clean up its files.
+            guard self.jobDir == jobDir else { return }
+            stage = .done(saved)
+            cleanupJob()
+        } catch is CancellationError {
+            if case .extracting = stage { stage = .edit }
+        } catch {
+            if case .extracting = stage { stage = .edit }
+            present(error)
+        }
+        extractionTask = nil
     }
 
     /// Selection (clamped, always valid) when a duration is known; text parsing otherwise.
@@ -194,8 +219,12 @@ final class AppModel {
         startText = ""
         endText = ""
         speed = 1.0
+        saveTranscript = false
+        transcriptLocaleIdentifier = ""
+        transcribing = false
         selection = nil
         clearError()
+        dismissTranscriptFailure()
     }
 
     private func cleanupJob() {
@@ -225,6 +254,11 @@ final class AppModel {
     private func clearError() {
         errorMessage = nil
         errorDetail = nil
+    }
+
+    func dismissTranscriptFailure() {
+        transcriptFailure = nil
+        transcriptFailureDetail = nil
     }
 }
 
@@ -371,5 +405,77 @@ extension AppModel {
         guard let selection else { return }
         startText = selection.start > 0 ? TimeCode.text(from: selection.start) : ""
         endText = selection.end < selection.duration ? TimeCode.text(from: selection.end) : ""
+    }
+}
+
+extension AppModel {
+    private func runTranscription(
+        mp3: URL, sourceFile: URL, trim: TrimRange, speed: Double, jobDir: URL
+    ) async {
+        do {
+            let audio = try await transcriptionAudio(
+                mp3: mp3, sourceFile: sourceFile, trim: trim, speed: speed, jobDir: jobDir)
+            let locale = resolvedTranscriptLocale()
+            var transcript = try await transcriber.transcribe(file: audio, locale: locale)
+
+            if case let .retry(languageCode) = TranscriptLocale.verdict(
+                assumedLanguageCode: locale.language.languageCode?.identifier ?? "",
+                detectedLanguageCode: Transcriber.detectLanguageCode(in: transcript))
+            {
+                try Task.checkCancellation()
+                let retryLocale = Locale(identifier: languageCode)
+                if let better = try? await transcriber.transcribe(file: audio, locale: retryLocale),
+                    better.wordCount > transcript.wordCount
+                {
+                    transcript = better
+                }
+            }
+
+            try Task.checkCancellation()
+            try write(transcript, beside: mp3)
+        } catch is CancellationError {
+            // A cancelled job leaves no transcript and raises no alert.
+        } catch {
+            guard !Task.isCancelled else { return }
+            transcriptFailure = error.userFacingMessage
+            transcriptFailureDetail = error.userFacingDetail
+        }
+    }
+
+    /// Transcribe 1.0x audio: the atempo filter distorts speech and costs accuracy.
+    private func transcriptionAudio(
+        mp3: URL, sourceFile: URL, trim: TrimRange, speed: Double, jobDir: URL
+    ) async throws -> URL {
+        guard speed != 1 else { return mp3 }
+        let dir = jobDir.appendingPathComponent("transcribe", isDirectory: true)
+        try FileManager.default.createDirectory(at: dir, withIntermediateDirectories: true)
+        let plan = ExtractionPlan(
+            sourceFile: sourceFile, trim: trim, speed: 1, jobDir: dir)
+        return try await extractor.extract(plan: plan, expectedDuration: probe?.duration) { _ in }
+    }
+
+    private func resolvedTranscriptLocale() -> Locale {
+        transcriptLocaleIdentifier.isEmpty
+            ? Locale.current : Locale(identifier: transcriptLocaleIdentifier)
+    }
+
+    func loadTranscriptLocales() async {
+        guard transcriptLocales.isEmpty else { return }
+        transcriptLocales = await Transcriber.supportedLocales()
+            .sorted { Self.displayName($0) < Self.displayName($1) }
+    }
+
+    static func displayName(_ locale: Locale) -> String {
+        Locale.current.localizedString(forIdentifier: locale.identifier) ?? locale.identifier
+    }
+
+    private func write(_ transcript: Transcript, beside mp3: URL) throws {
+        let format = Preferences().transcriptFormat
+        let base = mp3.deletingPathExtension().lastPathComponent
+        let destination = OutputName.available(
+            base: base, ext: format.fileExtension, in: mp3.deletingLastPathComponent()
+        ) { FileManager.default.fileExists(atPath: $0.path) }
+        let body = TranscriptWriter.render(transcript, as: format, title: base)
+        try body.write(to: destination, atomically: true, encoding: .utf8)
     }
 }

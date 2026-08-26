@@ -1,4 +1,5 @@
 import AppKit
+import ExtractrKit
 import SwiftUI
 
 struct SettingsView: View {
@@ -7,6 +8,7 @@ struct SettingsView: View {
     @State private var autoCheck = Preferences().autoCheckForUpdates
     @State private var autoYtDlp = Preferences().autoUpdateYtDlp
     @State private var saveFolder = Preferences().saveFolder
+    @State private var transcriptFormat = Preferences().transcriptFormat
 
     var body: some View {
         Form {
@@ -20,6 +22,17 @@ struct SettingsView: View {
                             .foregroundStyle(.secondary)
                         Button("Choose…") { chooseSaveFolder() }
                     }
+                }
+            }
+            Section {
+                Picker("Transcript format", selection: $transcriptFormat) {
+                    ForEach(TranscriptFormat.allCases, id: \.self) { format in
+                        Text(format.label).tag(format)
+                    }
+                }
+                .onChange(of: transcriptFormat) {
+                    var prefs = Preferences()
+                    prefs.transcriptFormat = transcriptFormat
                 }
             }
             Section {

@@ -8,20 +8,9 @@ struct EditView: View {
 
     var body: some View {
         @Bindable var model = model
-        VStack(alignment: .leading, spacing: 16) {
+        VStack(alignment: .leading, spacing: 28) {
             if let message = model.errorMessage {
                 ErrorBanner(message: message, detail: model.errorDetail)
-            }
-            VStack(alignment: .leading, spacing: 4) {
-                Text(model.displayTitle)
-                    .font(.headline)
-                    .lineLimit(2)
-                if let durationLabel {
-                    Text(durationLabel)
-                        .font(.subheadline)
-                        .monospacedDigit()
-                        .foregroundStyle(.secondary)
-                }
             }
             HStack(spacing: 6) {
                 TextField("Save as", text: $model.fileName)
@@ -42,6 +31,8 @@ struct EditView: View {
                         onMoveEnd: { model.moveEnd(to: $0) },
                         onScrub: { model.scrub(to: $0) })
                 }
+                // The drag tooltip is drawn above the strip, outside its own bounds.
+                .zIndex(1)
             }
             HStack(spacing: 6) {
                 Text("Trim")
@@ -57,6 +48,28 @@ struct EditView: View {
             .textFieldStyle(.roundedBorder)
             .multilineTextAlignment(.center)
             speedRow
+            HStack(spacing: 10) {
+                Toggle("Save transcript (Experimental)", isOn: $model.saveTranscript)
+                    .toggleStyle(.checkbox)
+                Menu {
+                    Picker("Transcript language", selection: $model.transcriptLocaleIdentifier) {
+                        Text("Follow system").tag("")
+                        ForEach(model.transcriptLocales, id: \.identifier) { locale in
+                            Text(AppModel.displayName(locale)).tag(locale.identifier(.bcp47))
+                        }
+                    }
+                    .pickerStyle(.inline)
+                    .labelsHidden()
+                } label: {
+                    // A bare Picker draws at its selected title's width; an expanding
+                    // label is what actually pins the control.
+                    Text(languageLabel).frame(maxWidth: .infinity, alignment: .leading)
+                }
+                .frame(width: 210)
+                .disabled(!model.saveTranscript)
+                Spacer()
+            }
+            .task { await model.loadTranscriptLocales() }
             HStack {
                 Button("Back") { model.reset() }
                 Spacer()
@@ -117,12 +130,11 @@ struct EditView: View {
         .accessibilityLabel(model.player?.isPlaying == true ? "Pause" : "Play")
     }
 
-    private var durationLabel: String? {
-        guard let duration = model.probe?.duration else { return nil }
-        let source = TimeCode.text(from: duration)
-        let selected = model.selection.map { $0.end - $0.start } ?? duration
-        let output = TimeCode.text(from: selected / model.speed)
-        return output == source ? source : "\(source) → \(output)"
+    private var languageLabel: String {
+        guard !model.transcriptLocaleIdentifier.isEmpty else { return "Follow system" }
+        return model.transcriptLocales
+            .first { $0.identifier(.bcp47) == model.transcriptLocaleIdentifier }
+            .map(AppModel.displayName) ?? "Follow system"
     }
 
     private var endPrompt: String {

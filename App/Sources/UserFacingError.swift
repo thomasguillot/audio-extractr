@@ -40,10 +40,23 @@ extension Error {
                 return "Converting finished but no MP3 was produced. Please try again."
             }
         }
+        if let e = self as? TranscriptionError {
+            switch e {
+            case .localeUnsupported:
+                return "Transcription doesn't support this language yet. The MP3 was still saved."
+            case .modelUnavailable:
+                return "The transcript couldn't be created. If the language model still needs downloading, check your connection and try again. The MP3 was still saved."
+            case .audioUnreadable:
+                return "The audio couldn't be read for transcription. The MP3 was still saved."
+            case .emptyTranscript:
+                return "No speech was found in this audio, so no transcript was written. The MP3 was still saved."
+            }
+        }
         return "Something went wrong. Please try again."
     }
 
     var userFacingDetail: String? {
-        (self as? ExtractorError)?.detail
+        if let e = self as? TranscriptionError { return e.detail }
+        return (self as? ExtractorError)?.detail
     }
 }

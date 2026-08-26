@@ -28,11 +28,15 @@ const faqs = [
   },
   {
     q: "Does it track me?",
-    a: "No. The only network traffic is the link you paste and the update checks on GitHub. No analytics, no crash reporting, no account, and nothing left running in the background.",
+    a: "No. The only network traffic is the link you paste, the update checks on GitHub, and, the first time you transcribe in a new language, the speech model Apple downloads to your Mac. No analytics, no crash reporting, no account, and nothing left running in the background.",
   },
   {
     q: "Can I build it myself?",
     a: "Yes. Clone the repo, run the script that fetches yt-dlp and ffmpeg, generate the Xcode project with xcodegen, and build. It's Swift and SwiftUI, MIT-licensed.",
+  },
+  {
+    q: "Can it write a transcript?",
+    a: "Yes, optionally. Check \"Save transcript\" before you extract and the text lands beside the MP3, as Markdown or plain text. It runs on your Mac using the built-in speech model, so nothing is uploaded. It is marked experimental because spoken numbers are often wrong, and it does not label who is speaking.",
   },
 ];
 ---

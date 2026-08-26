@@ -14,9 +14,9 @@ struct InputView: View {
             HStack(spacing: 8) {
                 TextField("Paste a link to grab its audio", text: $model.urlText)
                     .textFieldStyle(.roundedBorder)
-                    .onSubmit { model.submitURL() }
+                    .onSubmit { if canFetch { model.submitURL() } }
                 Button("Fetch") { model.submitURL() }
-                    .disabled(model.urlText.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty)
+                    .disabled(!canFetch)
             }
             Text("or")
                 .font(.subheadline)
@@ -24,9 +24,14 @@ struct InputView: View {
             DropZone(showImporter: $showImporter)
         }
         .padding(20)
+        .frame(maxWidth: .infinity, maxHeight: .infinity)
         .fileImporter(isPresented: $showImporter, allowedContentTypes: [.audiovisualContent]) { result in
             if case let .success(url) = result { model.pickFile(url) }
         }
+    }
+
+    private var canFetch: Bool {
+        !model.urlText.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty
     }
 }
 
@@ -44,8 +49,7 @@ struct DropZone: View {
                 .foregroundStyle(.secondary)
             Button("Browse…") { showImporter = true }
         }
-        .frame(maxWidth: .infinity)
-        .frame(height: 140)
+        .frame(maxWidth: .infinity, maxHeight: .infinity)
         .background(
             isTargeted ? Color.accentColor.opacity(0.08) : Color.clear,
             in: RoundedRectangle(cornerRadius: 10)
