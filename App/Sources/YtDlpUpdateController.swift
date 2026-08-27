@@ -21,7 +21,6 @@ final class YtDlpUpdateController {
         installedTag = updater.installedTag()
     }
 
-    /// At most one background check a day, and only while the preference is on.
     func runIfDue() {
         var prefs = Preferences()
         guard prefs.autoUpdateYtDlp else { return }

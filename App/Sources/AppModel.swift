@@ -65,9 +65,7 @@ final class AppModel {
         peakExtractor = PeakExtractor(tools: tools)
         previewTranscoder = PreviewTranscoder(tools: tools)
         // Sweep scratch from crashed/quit sessions; jobs recreate it on demand.
-        let scratch = FileManager.default.temporaryDirectory
-            .appendingPathComponent("AudioExtractr", isDirectory: true)
-        try? FileManager.default.removeItem(at: scratch)
+        try? FileManager.default.removeItem(at: AppPaths.scratchRoot())
     }
 
     func submitURL() {
@@ -85,18 +83,21 @@ final class AppModel {
         begin(.localFile(url))
     }
 
-    /// Parses and validates the trim fields, setting `errorMessage` and returning nil on failure.
+    private static let startTimeFormat = "Start time should look like 1:23 or 0:01:23."
+    private static let endTimeFormat = "End time should look like 1:23 or 0:01:23."
+
+    /// Sets `errorMessage` and returns nil when the fields do not parse.
     private func parsedTrim() -> TrimRange? {
         let startTrimmed = startText.trimmingCharacters(in: .whitespaces)
         let start = TimeCode.seconds(from: startTrimmed)
         if !startTrimmed.isEmpty && start == nil {
-            errorMessage = "Start time should look like 1:23 or 0:01:23."
+            errorMessage = Self.startTimeFormat
             return nil
         }
         let endTrimmed = endText.trimmingCharacters(in: .whitespaces)
         let end = TimeCode.seconds(from: endTrimmed)
         if !endTrimmed.isEmpty && end == nil {
-            errorMessage = "End time should look like 1:23 or 0:01:23."
+            errorMessage = Self.endTimeFormat
             return nil
         }
         let trim = TrimRange(start: start, end: end)
@@ -173,7 +174,10 @@ final class AppModel {
         extractionTask = nil
     }
 
-    /// Selection (clamped, always valid) when a duration is known; text parsing otherwise.
+    /// No validate() on the selection branch: TrimSelection clamps to [0, duration] and keeps
+    /// the handles apart, so the bounds are unrepresentable rather than merely unvalidated.
+    /// Running it here would only add TrimRange.maxSeconds, which would refuse media longer
+    /// than a week that the selection had already bounded correctly.
     private func resolvedTrim() -> TrimRange? {
         if let selection { return selection.trimRange }
         return parsedTrim()
@@ -375,27 +379,24 @@ extension AppModel {
 
     func applyStartText() {
         guard selection != nil else { return }
-        let trimmed = startText.trimmingCharacters(in: .whitespaces)
-        if trimmed.isEmpty {
-            moveStart(to: 0)
-        } else if let seconds = TimeCode.seconds(from: trimmed) {
-            moveStart(to: Double(seconds))
-        } else {
-            errorMessage = "Start time should look like 1:23 or 0:01:23."
-            errorDetail = nil
-            syncTextFromSelection()
-        }
+        apply(startText, whenEmpty: 0, message: Self.startTimeFormat, move: moveStart)
     }
 
     func applyEndText() {
         guard let current = selection else { return }
-        let trimmed = endText.trimmingCharacters(in: .whitespaces)
+        apply(endText, whenEmpty: current.duration, message: Self.endTimeFormat, move: moveEnd)
+    }
+
+    private func apply(
+        _ text: String, whenEmpty: Double, message: String, move: (Double) -> Void
+    ) {
+        let trimmed = text.trimmingCharacters(in: .whitespaces)
         if trimmed.isEmpty {
-            moveEnd(to: current.duration)
+            move(whenEmpty)
         } else if let seconds = TimeCode.seconds(from: trimmed) {
-            moveEnd(to: Double(seconds))
+            move(Double(seconds))
         } else {
-            errorMessage = "End time should look like 1:23 or 0:01:23."
+            errorMessage = message
             errorDetail = nil
             syncTextFromSelection()
         }

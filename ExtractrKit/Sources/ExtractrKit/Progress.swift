@@ -6,7 +6,6 @@ public enum YtDlpProgressParser {
             let percent = Double(match.1)
         else { return nil }
         let result = percent / 100
-        // Round to 10 decimal places to handle floating-point precision
         let rounded = (result * 1e10).rounded() / 1e10
         return min(rounded, 1)
     }

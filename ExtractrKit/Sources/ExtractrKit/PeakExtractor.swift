@@ -9,7 +9,6 @@ public struct PeakExtractor: Sendable {
         self.runner = runner
     }
 
-    /// Decodes to a temp PCM file in `jobDir` (removed before returning) and buckets it.
     public func peaks(for file: URL, count: Int, jobDir: URL) async throws -> [Float] {
         let pcm = jobDir.appendingPathComponent("peaks.pcm")
         defer { try? FileManager.default.removeItem(at: pcm) }

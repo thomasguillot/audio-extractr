@@ -27,7 +27,6 @@ struct AudioExtractrApp: App {
                     ytDlpController.runIfDue()
                 }
         }
-        .defaultSize(width: 640, height: 480)
         .windowResizability(.contentSize)
         .commands {
             CommandGroup(after: .appInfo) {

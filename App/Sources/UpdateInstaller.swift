@@ -2,10 +2,8 @@ import AppKit
 import Foundation
 import ExtractrKit
 
-/// Installs a downloaded update in place: mount the `.dmg`, copy the app into
-/// /Applications, strip quarantine, and relaunch. Mirrors the flow Newspack
-/// Shots uses — the already-trusted running app performs the swap itself, so
-/// Gatekeeper doesn't re-challenge the relaunch once quarantine is cleared.
+/// Mirrors the flow Newspack Shots uses: the already-trusted running app performs the
+/// swap itself, so Gatekeeper doesn't re-challenge the relaunch once quarantine is cleared.
 @MainActor
 struct UpdateInstaller {
     enum InstallError: LocalizedError {
@@ -27,9 +25,8 @@ struct UpdateInstaller {
     private let appName = "Audio Extractr.app"
     private let installedPath = "/Applications/Audio Extractr.app"
 
-    /// Mounts the image, copies the app into /Applications, strips quarantine,
-    /// and returns the installed path. Does not relaunch — the caller confirms,
-    /// then calls `relaunch(path:)`.
+    /// Mounts the image, copies the app into /Applications, strips quarantine, and returns
+    /// the installed path. Does not relaunch — the caller calls `relaunch(path:)`.
     @discardableResult
     func install(dmgAt dmg: URL) throws -> String {
         let mountPoint = FileManager.default.temporaryDirectory
@@ -44,11 +41,25 @@ struct UpdateInstaller {
         let newApp = mountPoint.appendingPathComponent(appName)
         guard FileManager.default.fileExists(atPath: newApp.path) else { throw InstallError.missingApp }
 
-        try? FileManager.default.removeItem(atPath: installedPath)
-        try shell("/usr/bin/ditto", [newApp.path, installedPath])
-        // Downloaded apps carry com.apple.quarantine; strip it or Gatekeeper
-        // re-blocks the relaunch.
-        try? shell("/usr/bin/xattr", ["-dr", "com.apple.quarantine", installedPath])
+        // Copy beside the target and swap, rather than deleting first: a ditto that fails
+        // partway must not leave the user with no app at all. Staging in /Applications keeps
+        // the swap on one volume, which is what makes it atomic.
+        let installed = URL(fileURLWithPath: installedPath)
+        let staged = installed.deletingLastPathComponent()
+            .appendingPathComponent(".\(appName).\(UUID().uuidString)")
+        var swapped = false
+        defer { if !swapped { try? FileManager.default.removeItem(at: staged) } }
+
+        try shell("/usr/bin/ditto", [newApp.path, staged.path])
+        // Downloaded apps carry com.apple.quarantine; Gatekeeper re-blocks the relaunch otherwise.
+        try? shell("/usr/bin/xattr", ["-dr", "com.apple.quarantine", staged.path])
+
+        if FileManager.default.fileExists(atPath: installedPath) {
+            _ = try FileManager.default.replaceItemAt(installed, withItemAt: staged)
+        } else {
+            try FileManager.default.moveItem(at: staged, to: installed)
+        }
+        swapped = true
 
         try? shell("/usr/bin/hdiutil", ["detach", mountPoint.path, "-force"])
         detached = true

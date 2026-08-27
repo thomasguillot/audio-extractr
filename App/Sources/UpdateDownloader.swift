@@ -1,3 +1,5 @@
+import CryptoKit
+import ExtractrKit
 import Foundation
 
 /// Allows a redirect only when its target stays https; a non-https redirect is cancelled and recorded.
@@ -28,10 +30,12 @@ private final class DownloadBodyDelegate: NSObject, URLSessionDataDelegate, @unc
     private let maxBytes: Int
     private let expectedSize: Int
     private let onProgress: (@Sendable (Int64, Int64?) -> Void)?
+    private let expectedDigest: String
     // Lock-free by URLSession ordering: the response disposition returns before any body chunk,
     // and completion fires after the last chunk — so these are never touched concurrently.
     private var received = 0
     private var errorFlag: Error?
+    private var digest = SHA256()
 
     private let lock = NSLock()
     private var _continuation: CheckedContinuation<Void, Error>?
@@ -42,12 +46,14 @@ private final class DownloadBodyDelegate: NSObject, URLSessionDataDelegate, @unc
         fileHandle: FileHandle,
         maxBytes: Int,
         expectedSize: Int,
+        expectedDigest: String,
         onProgress: (@Sendable (Int64, Int64?) -> Void)?
     ) {
         self.redirectGuard = redirectGuard
         self.fileHandle = fileHandle
         self.maxBytes = maxBytes
         self.expectedSize = expectedSize
+        self.expectedDigest = expectedDigest
         self.onProgress = onProgress
     }
 
@@ -112,6 +118,7 @@ private final class DownloadBodyDelegate: NSObject, URLSessionDataDelegate, @unc
         }
         do {
             try fileHandle.write(contentsOf: data)
+            digest.update(data: data)
             // Emitted after the write so reported progress never runs ahead of bytes on disk.
             onProgress?(Int64(received), expectedSize > 0 ? Int64(expectedSize) : nil)
         } catch {
@@ -119,6 +126,10 @@ private final class DownloadBodyDelegate: NSObject, URLSessionDataDelegate, @unc
             errorFlag = error
             dataTask.cancel()
         }
+    }
+
+    private static func hex(_ digest: SHA256Digest) -> String {
+        digest.map { String(format: "%02x", $0) }.joined()
     }
 
     func urlSession(_ session: URLSession, task: URLSessionTask, didCompleteWithError error: Error?) {
@@ -131,6 +142,8 @@ private final class DownloadBodyDelegate: NSObject, URLSessionDataDelegate, @unc
             taskResult = .failure(e)
         } else if expectedSize > 0, received != expectedSize {
             taskResult = .failure(UpdateDownloader.DownloadError.sizeMismatch)
+        } else if Self.hex(digest.finalize()) != expectedDigest {
+            taskResult = .failure(UpdateDownloader.DownloadError.digestMismatch)
         } else {
             taskResult = .success(())
         }
@@ -152,7 +165,7 @@ private final class DownloadBodyDelegate: NSObject, URLSessionDataDelegate, @unc
 struct UpdateDownloader: Sendable {
     enum DownloadError: Error {
         case insecureURL, insecureRedirect, badStatus(Int), tooLarge, writeFailed
-        case sizeMismatch, unexpectedContentType
+        case sizeMismatch, unexpectedContentType, digestMismatch
     }
 
     private static let maxBytes = 500 * 1024 * 1024
@@ -165,16 +178,15 @@ struct UpdateDownloader: Sendable {
         self.fileManager = fileManager
     }
 
-    /// Streams the verified `.dmg` to a unique temp file and returns its path.
-    /// The caller (UpdateInstaller) mounts and installs from it. Every https,
-    /// size, and content-type guard runs before any byte is written.
+    /// Streams the `.dmg` to a unique temp file and returns its path. The caller
+    /// (UpdateInstaller) mounts and installs from it. Every https, size and content-type guard
+    /// runs before any byte is written, and the SHA-256 is checked before the path is returned,
+    /// so no caller ever sees a file that failed verification.
     func downloadToTemp(
-        dmgURL: URL, expectedSize: Int,
+        dmgURL: URL, expectedSize: Int, expectedSHA256: String,
         onProgress: (@Sendable (Int64, Int64?) -> Void)? = nil
     ) async throws -> URL {
-        // Fail closed: never download over a non-https URL.
         guard dmgURL.scheme?.lowercased() == "https" else { throw DownloadError.insecureURL }
-        // Reject the advertised size before issuing any network request.
         if expectedSize > Self.maxBytes { throw DownloadError.tooLarge }
 
         var request = URLRequest(url: dmgURL)
@@ -188,7 +200,8 @@ struct UpdateDownloader: Sendable {
         let redirectGuard = DownloadRedirectGuard()
         let delegate = DownloadBodyDelegate(
             redirectGuard: redirectGuard, fileHandle: fileHandle, maxBytes: Self.maxBytes,
-            expectedSize: expectedSize, onProgress: onProgress)
+            expectedSize: expectedSize, expectedDigest: expectedSHA256.lowercased(),
+            onProgress: onProgress)
         let task = session.dataTask(with: request)
         task.delegate = delegate
         task.resume()
@@ -236,7 +249,7 @@ extension UpdateDownloader.DownloadError: LocalizedError {
         case .insecureRedirect:
             return "The update download was redirected to an insecure address and was canceled."
         case let .badStatus(code):
-            return "The update server returned an unexpected response (status \(code))."
+            return HTTPGuard.badStatusMessage(code)
         case .tooLarge:
             return "The update download is larger than expected, so it was canceled."
         case .writeFailed:
@@ -245,6 +258,8 @@ extension UpdateDownloader.DownloadError: LocalizedError {
             return "The update download didn't match the size the release advertised, so it was canceled."
         case .unexpectedContentType:
             return "The update server returned a web page instead of the update disk image."
+        case .digestMismatch:
+            return "The update download didn't match the checksum the release published, so it was canceled."
         }
     }
 }

@@ -3,9 +3,13 @@ import Foundation
 public enum YtDlpCommand {
     public static let format = "bestaudio[ext=m4a]/bestaudio[ext=webm]/bestaudio/best[height<=480]"
 
+    /// Without this yt-dlp also reads ~/.config/yt-dlp/config and friends, so the effective
+    /// arguments are not the ones built here — an --exec line there runs on every extraction.
+    private static let ignoreConfig = "--ignore-config"
+
     public static func probeArguments(url: URL) -> [String] {
         [
-            "-J",
+            ignoreConfig, "-J",
             "--extractor-args", "youtube:player_client=android",
             "--no-playlist", "--no-warnings", url.absoluteString,
         ]
@@ -15,7 +19,7 @@ public enum YtDlpCommand {
         -> [String]
     {
         [
-            url.absoluteString,
+            ignoreConfig, url.absoluteString,
             "--extractor-args", "youtube:player_client=android",
             "-f", format,
             "--no-playlist", "--no-warnings", "--newline",

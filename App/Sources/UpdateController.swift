@@ -12,9 +12,8 @@ final class UpdateController {
 
     private enum CheckKind { case interactive, background }
     private var inFlight: Set<CheckKind> = []
-    /// A background check that landed while a job was running, surfaced the
-    /// moment the app next goes idle. Only one background check runs per launch,
-    /// so losing this would cost the session its update prompt entirely.
+    /// Held until the app next goes idle. Only one background check runs per launch, so
+    /// dropping this would cost the session its update prompt entirely.
     private var pendingUpdate: UpdatePlan.AvailableUpdate?
 
     init(
@@ -86,8 +85,7 @@ final class UpdateController {
         present(pending, deferrable: false)
     }
 
-    /// Busy means a job is in flight or the user is mid-edit. A window stealing
-    /// focus over the waveform is worse than waiting for the next launch.
+    /// A window stealing focus over the waveform is worse than waiting for the next launch.
     private static func isIdle(_ stage: AppModel.Stage) -> Bool {
         switch stage {
         case .input, .done: return true

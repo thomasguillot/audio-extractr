@@ -1,9 +1,8 @@
 import CoreGraphics
 import Foundation
 
-/// Trim selection over the source clip: [start, end] inside [0, duration].
-/// Handles clamp to the clip and never cross closer than `minimumLength`,
-/// so an inverted or empty extract range is unrepresentable.
+/// Trim selection over the source clip. Handles clamp to [0, duration] and never cross
+/// closer than `minimumLength`, so an inverted or empty extract range is unrepresentable.
 public struct TrimSelection: Equatable, Sendable {
     public let duration: Double
     public private(set) var start: Double
@@ -16,8 +15,6 @@ public struct TrimSelection: Equatable, Sendable {
         self.start = 0
         self.end = self.duration
     }
-
-    public var isTrimmed: Bool { start > 0 || end < duration }
 
     public mutating func moveStart(to time: Double) {
         start = min(max(time, 0), max(end - Self.minimumLength, 0))
@@ -50,7 +47,6 @@ public enum TrimGeometry {
         return CGFloat(fraction) * stripWidth
     }
 
-    /// Magnetic handle snap: within `threshold` of the playhead lands exactly on it.
     public static func snap(_ proposed: Double, toPlayhead playhead: Double, threshold: Double)
         -> Double
     {

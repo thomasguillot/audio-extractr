@@ -34,20 +34,17 @@ public struct GitHubRelease: Codable, Sendable, Equatable {
     public struct Asset: Codable, Sendable, Equatable {
         public let name: String
         public let browserDownloadURL: String
-        public let contentType: String
         public let size: Int
 
-        public init(name: String, browserDownloadURL: String, contentType: String, size: Int) {
+        public init(name: String, browserDownloadURL: String, size: Int) {
             self.name = name
             self.browserDownloadURL = browserDownloadURL
-            self.contentType = contentType
             self.size = size
         }
 
         enum CodingKeys: String, CodingKey {
             case name
             case browserDownloadURL = "browser_download_url"
-            case contentType = "content_type"
             case size
         }
     }

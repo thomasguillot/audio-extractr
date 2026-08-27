@@ -91,7 +91,6 @@ extension ReleaseNotes {
             paragraph = []
         }
 
-        /// ATX only: the `#` run must be followed by a space or end of line.
         private static func heading(in line: String) -> (level: Int, text: String)? {
             guard line.hasPrefix("#") else { return nil }
             let hashes = line.prefix(while: { $0 == "#" }).count

@@ -4,9 +4,7 @@ import Foundation
 import Observation
 import SwiftUI
 
-/// Sparkle-style update window: one window, four phases. Available (notes plus
-/// Skip/Later/Install), downloading (progress plus Cancel), ready (Install and
-/// Relaunch), failed. Ported from Newspack Shots.
+/// Sparkle-style update window: one window, four phases. Ported from Newspack Shots.
 @MainActor
 final class UpdateWindowController: NSObject, NSWindowDelegate {
     static let shared = UpdateWindowController()
@@ -112,6 +110,7 @@ final class UpdateWindowModel {
             do {
                 let dmg = try await self.downloader.downloadToTemp(
                     dmgURL: self.update.dmgURL, expectedSize: self.update.size,
+                    expectedSHA256: self.update.sha256,
                     onProgress: { received, total in
                         Task { @MainActor [weak self] in
                             // One Task per chunk, and Tasks are unordered: never go backwards.
@@ -199,8 +198,6 @@ private struct UpdateWindowView: View {
             VStack(alignment: .leading, spacing: 8) {
                 ForEach(model.update.sections.indices, id: \.self) { index in
                     let section = model.update.sections[index]
-                    // The version heading only earns its place when the update
-                    // spans more than one release.
                     if model.update.sections.count > 1 {
                         Text(section.version)
                             .font(.system(size: 13, weight: .bold))
@@ -241,7 +238,6 @@ private struct UpdateWindowView: View {
     }
 
     /// Inline-only: a block construct left in a note must not restyle the row.
-    /// Falls back to the raw text if parsing fails.
     private func inline(_ markdown: String) -> Text {
         let options = AttributedString.MarkdownParsingOptions(
             interpretedSyntax: .inlineOnlyPreservingWhitespace)

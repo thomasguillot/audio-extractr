@@ -8,7 +8,6 @@ import Testing
         let selection = TrimSelection(duration: 120)
         #expect(selection.start == 0)
         #expect(selection.end == 120)
-        #expect(!selection.isTrimmed)
     }
     @Test func negativeDurationClampsToZero() {
         let selection = TrimSelection(duration: -5)
@@ -24,7 +23,6 @@ import Testing
         selection.moveEnd(to: 30)
         selection.moveStart(to: 99)
         #expect(selection.start == selection.end - TrimSelection.minimumLength)
-        #expect(selection.isTrimmed)
     }
     @Test func endCannotCrossStart() {
         var selection = TrimSelection(duration: 100)
