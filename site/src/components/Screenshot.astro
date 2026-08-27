@@ -1,4 +1,6 @@
 ---
+import { base } from "../site";
+
 interface Props {
   name: "input" | "edit" | "done";
   alt: string;
@@ -10,7 +12,6 @@ interface Props {
 }
 
 const { name, alt, width, height, loading = "lazy", priority = false, class: className } = Astro.props;
-const base = import.meta.env.BASE_URL.replace(/\/$/, "");
 ---
 
 <picture class:list={["shot", className]} data-reveal-image={priority ? undefined : true}>

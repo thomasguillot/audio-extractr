@@ -22,10 +22,9 @@ private final class ProcessBox: @unchecked Sendable {
 public struct ProcessRunner: Sendable {
     public init() {}
 
-    /// Drains a pipe in raw chunks, forwarding each complete line to `onLine`.
-    /// Chunked (not `FileHandle.bytes.lines`): the line iterator stalls once a single
-    /// line outgrows its internal buffer, which stops draining the pipe and deadlocks
-    /// the child mid-write — yt-dlp -J emits its whole JSON as one multi-hundred-KB line.
+    /// Chunked rather than `FileHandle.bytes.lines`: the line iterator stalls once a single
+    /// line outgrows its internal buffer, which stops draining the pipe and deadlocks the
+    /// child mid-write — yt-dlp -J emits its whole JSON as one multi-hundred-KB line.
     private func drainTask(_ pipe: Pipe, onLine: (@Sendable (String) -> Void)?) -> Task<String, Never> {
         Task.detached {
             let handle = pipe.fileHandleForReading
@@ -70,8 +69,7 @@ public struct ProcessRunner: Sendable {
     public func run(
         _ executable: URL,
         arguments: [String],
-        onStdoutLine: (@Sendable (String) -> Void)? = nil,
-        onStderrLine: (@Sendable (String) -> Void)? = nil
+        onStdoutLine: (@Sendable (String) -> Void)? = nil
     ) async throws -> ProcessOutput {
         let box = ProcessBox()
         box.process.executableURL = executable
@@ -82,7 +80,7 @@ public struct ProcessRunner: Sendable {
 
         // Readers must drain concurrently with the wait or a full pipe deadlocks the child.
         let outTask = drainTask(box.stdout, onLine: onStdoutLine)
-        let errTask = drainTask(box.stderr, onLine: onStderrLine)
+        let errTask = drainTask(box.stderr, onLine: nil)
 
         do {
             let exitCode: Int32 = try await withTaskCancellationHandler {
@@ -92,9 +90,8 @@ public struct ProcessRunner: Sendable {
                         try box.process.run()
                     } catch {
                         box.process.terminationHandler = nil
-                        // The process never launched, so nothing will ever close the pipes'
-                        // write ends — closing them here unblocks outTask/errTask, which
-                        // would otherwise block on read() forever.
+                        // Nothing else will ever close the pipes' write ends after a failed
+                        // launch, so outTask/errTask would block on read() forever.
                         box.stdout.fileHandleForWriting.closeFile()
                         box.stderr.fileHandleForWriting.closeFile()
                         continuation.resume(throwing: ProcessRunnerError.launchFailed(error.localizedDescription))
@@ -109,9 +106,8 @@ public struct ProcessRunner: Sendable {
             try Task.checkCancellation()
             return ProcessOutput(exitCode: exitCode, stdout: stdout, stderr: stderr)
         } catch {
-            // On any failure path (launch failure or cancellation) make sure the drain
-            // tasks are wound down before this call returns, so callers never observe a
-            // leaked Task still blocked on I/O after `run` has already thrown.
+            // Wind the drain tasks down before returning, so a throw never leaves a leaked
+            // Task still blocked on I/O.
             outTask.cancel()
             errTask.cancel()
             _ = await outTask.value

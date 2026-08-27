@@ -21,11 +21,27 @@ public enum URLPolicy {
         let trimmed = input.trimmingCharacters(in: .whitespacesAndNewlines)
         guard !trimmed.isEmpty else { throw URLPolicyError.empty }
         guard trimmed.count <= maxLength else { throw URLPolicyError.tooLong }
-        guard let url = URL(string: trimmed), let host = url.host(), !host.isEmpty else {
+        // percentEncoded: false — the default leaves the host encoded, so "%31%32%37.0.0.1"
+        // would reach isBlockedHost intact while yt-dlp decodes it and reaches 127.0.0.1.
+        guard let url = URL(string: trimmed), let host = url.host(percentEncoded: false),
+            !host.isEmpty
+        else {
             throw URLPolicyError.invalid
         }
-        guard url.scheme?.lowercased() == "https" else { throw URLPolicyError.insecureScheme }
+        guard isHTTPS(url) else { throw URLPolicyError.insecureScheme }
         guard !isBlockedHost(host) else { throw URLPolicyError.blockedHost }
+        return url
+    }
+
+    public static func isHTTPS(_ url: URL) -> Bool {
+        url.scheme?.lowercased() == "https"
+    }
+
+    /// https-only parse for URLs that arrive from the update API rather than from the user.
+    /// The host denylist deliberately does not apply: these are public release hosts, and
+    /// `validated(_:)` stays the gate for anything a person typed.
+    public static func httpsURL(_ string: String) -> URL? {
+        guard let url = URL(string: string), isHTTPS(url) else { return nil }
         return url
     }
 
@@ -88,6 +104,8 @@ public enum URLPolicy {
         if bytes.allSatisfy({ $0 == 0 }) { return true }
         // Link-local fe80::/10 (top 10 bits: 1111111010)
         if bytes[0] == 0xfe, (bytes[1] & 0xc0) == 0x80 { return true }
+        // Unique-local fc00::/7 — the IPv6 counterpart of RFC1918
+        if (bytes[0] & 0xfe) == 0xfc { return true }
         // IPv4-mapped ::ffff:a.b.c.d — evaluate the embedded IPv4 range.
         if bytes[0..<10].allSatisfy({ $0 == 0 }), bytes[10] == 0xff, bytes[11] == 0xff {
             return isBlockedIPv4([bytes[12], bytes[13], bytes[14], bytes[15]])

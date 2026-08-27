@@ -28,7 +28,7 @@ import Testing
     @Test func probeArguments() {
         #expect(
             YtDlpCommand.probeArguments(url: url) == [
-                "-J",
+                "--ignore-config", "-J",
                 "--extractor-args", "youtube:player_client=android",
                 "--no-playlist", "--no-warnings", "https://example.com/watch?v=1",
             ])
@@ -38,7 +38,7 @@ import Testing
             url: url, outputTemplate: "/tmp/job/download.%(ext)s", ffmpegDir: "/app/bin")
         #expect(
             args == [
-                "https://example.com/watch?v=1",
+                "--ignore-config", "https://example.com/watch?v=1",
                 "--extractor-args", "youtube:player_client=android",
                 "-f", "bestaudio[ext=m4a]/bestaudio[ext=webm]/bestaudio/best[height<=480]",
                 "--no-playlist", "--no-warnings", "--newline",

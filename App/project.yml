@@ -22,7 +22,7 @@ targets:
         CFBundleVersion: "$(CURRENT_PROJECT_VERSION)"
         LSMinimumSystemVersion: "26.0"
         LSApplicationCategoryType: public.app-category.utilities
-        NSHumanReadableCopyright: "© 2026 Thomas Guillot · MIT licensed"
+        NSHumanReadableCopyright: "© 2026 Thomas Guillot · MIT-licensed"
     preBuildScripts:
       - name: SwiftLint
         basedOnDependencyAnalysis: false
@@ -50,7 +50,7 @@ targets:
       base:
         PRODUCT_BUNDLE_IDENTIFIER: com.audioextractr.app
         PRODUCT_NAME: "Audio Extractr"
-        MARKETING_VERSION: "1.1.0"
+        MARKETING_VERSION: "1.1.1"
         CURRENT_PROJECT_VERSION: "1"
         SWIFT_VERSION: "6.0"
         ARCHS: arm64

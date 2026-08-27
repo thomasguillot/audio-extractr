@@ -1,42 +1,24 @@
 ---
-const repo = "https://github.com/thomasguillot/audio-extractr";
+import Panel from "./Panel.astro";
+import { repo } from "../site";
 ---
 
-<section id="open-source" class="open-source" data-reveal aria-labelledby="open-source-title">
-  <div class="shell">
-    <div class="panel grid">
-      <div class="head span-head">
-        <h2 id="open-source-title">Free and open source</h2>
-        <p class="lede">Nothing to buy, nothing to sign up for. The source is public, and so are the build steps.</p>
-      </div>
-      <div class="copy span-body">
-        <p>The whole app, every commit, is MIT-licensed. Read it, fork it, build it yourself.</p>
-        <p>This is open source because software should be transparent, not locked away.</p>
-        <p>
-          It runs on <a href="https://github.com/yt-dlp/yt-dlp">yt-dlp</a> and <a href="https://ffmpeg.org">ffmpeg</a>, credited in the <a href={`${repo}/blob/main/ACKNOWLEDGEMENTS.md`}>acknowledgements</a>. Both run as their own separate processes, never linked into the app itself.
-        </p>
-        <a class="source-link" href={repo}>View the source on GitHub</a>
-      </div>
-    </div>
+<Panel
+  id="open-source"
+  title="Free and open source"
+  lede="Nothing to buy, nothing to sign up for. The source is public, and so are the build steps."
+>
+  <div class="copy span-body">
+    <p>The whole app, every commit, is MIT-licensed. Read it, fork it, build it yourself.</p>
+    <p>This is open source because software should be transparent, not locked away.</p>
+    <p>
+      It runs on <a href="https://github.com/yt-dlp/yt-dlp">yt-dlp</a> and <a href="https://ffmpeg.org">ffmpeg</a>, credited in the <a href={`${repo}/blob/main/ACKNOWLEDGEMENTS.md`}>acknowledgements</a>. Both run as their own separate processes, never linked into the app itself.
+    </p>
+    <a class="btn" href={repo}>View the source on GitHub</a>
   </div>
-</section>
+</Panel>
 
 <style>
-  .open-source {
-    padding-top: var(--section);
-  }
-
-  .panel {
-    border-radius: var(--radius-lg);
-    background: var(--surface-2);
-    padding: clamp(1.75rem, 4vw, 3.5rem);
-    align-items: start;
-  }
-
-  .lede {
-    margin-top: 1rem;
-  }
-
   .copy {
     display: flex;
     flex-direction: column;
@@ -51,31 +33,7 @@ const repo = "https://github.com/thomasguillot/audio-extractr";
     margin-top: 1.25rem;
   }
 
-  .source-link {
-    display: inline-flex;
-    align-items: center;
-    height: 2.75rem;
+  .copy .btn {
     margin-top: clamp(1rem, 2vw, 1.5rem);
-    padding-inline: 1.25rem;
-    border-radius: var(--radius-sm);
-    background: var(--accent);
-    color: var(--on-accent);
-    font-size: 0.9375rem;
-    font-weight: 500;
-    letter-spacing: -0.006em;
-    text-decoration: none;
-    transition: filter 160ms ease, background 160ms ease;
-  }
-
-  @supports not (color: oklch(from red 0.5 c h)) {
-    .source-link:hover {
-      filter: brightness(0.88);
-    }
-  }
-
-  @supports (color: oklch(from red 0.5 c h)) {
-    .source-link:hover {
-      background: oklch(from var(--accent) calc(l - 0.06) c h);
-    }
   }
 </style>

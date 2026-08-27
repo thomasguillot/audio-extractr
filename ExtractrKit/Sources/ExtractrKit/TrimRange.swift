@@ -27,7 +27,7 @@ public struct TrimRange: Equatable, Sendable {
         }
     }
 
-    /// Source seconds ffmpeg should read (`-t`); nil when there is no end bound.
+    /// Source seconds ffmpeg should read (`-t`).
     public var clipLimitSeconds: Int? {
         end.map { $0 - (start ?? 0) }
     }

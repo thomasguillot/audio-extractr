@@ -7,7 +7,7 @@ import Section from "./Section.astro";
   title="Installing an unsigned app"
   lede="macOS will not open it on the first try. These three steps clear it for good."
 >
-  <ol class="steps span-body" role="list">
+  <ol class="steps step-numbers rule-rows span-body" role="list">
     <li>
       <h3 class="title">Open the app</h3>
       <p>
@@ -39,13 +39,7 @@ import Section from "./Section.astro";
 
   .steps li {
     position: relative;
-    max-width: none;
-    border-top: 1px solid var(--line);
-    padding: var(--col-gap) 0 var(--col-gap) 39.5px;
-  }
-
-  .steps li:last-child {
-    padding-bottom: 0;
+    padding-left: 39.5px;
   }
 
   .steps li::before {
@@ -54,13 +48,6 @@ import Section from "./Section.astro";
     position: absolute;
     left: 0;
     top: var(--col-gap);
-    font-family: var(--font-display);
-    font-size: clamp(1.375rem, 1.9vw, 1.625rem);
-    font-weight: 500;
-    line-height: 1.2;
-    letter-spacing: -0.008em;
-    font-variant-numeric: tabular-nums;
-    color: var(--link);
   }
 
   h3 {

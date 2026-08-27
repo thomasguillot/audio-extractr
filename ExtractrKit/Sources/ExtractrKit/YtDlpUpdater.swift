@@ -26,11 +26,8 @@ public enum YtDlpReleaseAssets {
 
     public static func locate(in release: GitHubRelease) -> Located? {
         func httpsURL(named name: String) -> URL? {
-            guard let asset = release.assets.first(where: { $0.name == name }),
-                let url = URL(string: asset.browserDownloadURL),
-                url.scheme?.lowercased() == "https"
-            else { return nil }
-            return url
+            guard let asset = release.assets.first(where: { $0.name == name }) else { return nil }
+            return URLPolicy.httpsURL(asset.browserDownloadURL)
         }
         guard let binary = httpsURL(named: binaryAssetName),
             let sums = httpsURL(named: sumsAssetName)
@@ -40,16 +37,37 @@ public enum YtDlpReleaseAssets {
 }
 
 public struct YtDlpUpdater: Sendable {
-    public enum UpdateError: Error {
+    public enum UpdateError: Error, Equatable {
         case assetsMissing
         case hashMissing
         case hashMismatch
+        case insecureRedirect
         case badStatus(Int)
         case tooLarge
+
+        init(_ failure: HTTPGuard.Failure) {
+            switch failure {
+            case .insecureRedirect: self = .insecureRedirect
+            case let .badStatus(code): self = .badStatus(code)
+            case .tooLarge: self = .tooLarge
+            }
+        }
     }
 
     private static let maxBinaryBytes = 200 * 1024 * 1024
     private static let maxSumsBytes = 1024 * 1024
+
+    /// yt-dlp tags are dates (`2026.07.04`), which `AppVersion` orders correctly. Comparing
+    /// rather than testing inequality stops a replayed older release being installed over a
+    /// newer one. Tags that don't parse fall back to inequality so an upstream format change
+    /// can't wedge the updater.
+    static func isUpgrade(from installed: String?, to candidate: String) -> Bool {
+        guard let installed, !installed.isEmpty else { return true }
+        guard let old = AppVersion(installed), let new = AppVersion(candidate) else {
+            return candidate != installed
+        }
+        return new > old
+    }
 
     private let binDir: URL
     private let bundledTagFile: URL?
@@ -87,7 +105,7 @@ public struct YtDlpUpdater: Sendable {
         guard let assets = YtDlpReleaseAssets.locate(in: release) else {
             throw UpdateError.assetsMissing
         }
-        if assets.tag == installedTag() { return nil }
+        guard Self.isUpgrade(from: installedTag(), to: assets.tag) else { return nil }
 
         let sumsData = try await fetch(assets.sumsURL, maxBytes: Self.maxSumsBytes)
         guard
@@ -119,10 +137,10 @@ public struct YtDlpUpdater: Sendable {
     private func fetch(_ url: URL, maxBytes: Int) async throws -> Data {
         var request = URLRequest(url: url)
         request.timeoutInterval = 300
-        let (data, response) = try await session.data(for: request)
-        guard let http = response as? HTTPURLResponse else { throw UpdateError.badStatus(-1) }
-        guard http.statusCode == 200 else { throw UpdateError.badStatus(http.statusCode) }
-        guard data.count <= maxBytes else { throw UpdateError.tooLarge }
-        return data
+        do {
+            return try await HTTPGuard.data(for: request, session: session, maxBytes: maxBytes)
+        } catch let failure as HTTPGuard.Failure {
+            throw UpdateError(failure)
+        }
     }
 }

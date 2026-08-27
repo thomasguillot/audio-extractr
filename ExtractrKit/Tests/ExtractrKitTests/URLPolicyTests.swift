@@ -41,4 +41,34 @@ import Testing
     @Test func isBlockedIPv4FailsClosedOnMalformedInput() {
         #expect(URLPolicy.isBlockedIPv4([127]) == true)
     }
+
+    /// The policy and the child process must judge the same string: `URL.host()` returns the
+    /// encoded host, and whatever consumes the URL afterwards decodes it.
+    @Test(arguments: [
+        "https://%31%32%37.0.0.1/a",
+        "https://%31%32%37.%30.%30.%31/a",
+        "https://%6cocalhost/a",
+        "https://%6C%6F%63%61%6C%68%6F%73%74/a",
+        "https://%31%30.0.0.5/a",
+        "https://%31%39%32.168.1.5/a",
+        "https://%31%36%39.254.169.254/a",
+        "https://%30%78%37%66.0.0.1/a",
+    ])
+    func rejectsPercentEncodedLoopbackAndPrivate(_ candidate: String) {
+        #expect(throws: URLPolicyError.blockedHost) { try URLPolicy.validated(candidate) }
+    }
+
+    /// Unique-local addresses are the IPv6 counterpart of RFC1918 and route on a LAN.
+    @Test(arguments: [
+        "https://[fc00::1]/a", "https://[fd00::1]/a",
+        "https://[fdff:ffff:ffff:ffff:ffff:ffff:ffff:ffff]/a",
+    ])
+    func rejectsIPv6UniqueLocal(_ candidate: String) {
+        #expect(throws: URLPolicyError.blockedHost) { try URLPolicy.validated(candidate) }
+    }
+
+    @Test func percentEncodingDoesNotBreakOrdinaryHosts() throws {
+        let url = try URLPolicy.validated("https://ex%61mple.com/watch")
+        #expect(url.absoluteString == "https://ex%61mple.com/watch")
+    }
 }

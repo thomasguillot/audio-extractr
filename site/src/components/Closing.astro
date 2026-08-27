@@ -1,15 +1,7 @@
 ---
 import DownloadButton from "./DownloadButton.astro";
-import { readFileSync } from "node:fs";
-import { resolve } from "node:path";
-
-let version: string | undefined;
-try {
-  const projectYml = readFileSync(resolve(process.cwd(), "../App/project.yml"), "utf8");
-  version = projectYml.match(/MARKETING_VERSION:\s*"([^"]+)"/)?.[1];
-} catch {
-  version = undefined;
-}
+import Panel from "./Panel.astro";
+import { version } from "../site";
 
 const spec = [
   ...(version ? [{ term: "Version", value: version }] : []),
@@ -19,51 +11,27 @@ const spec = [
 ];
 ---
 
-<section id="privacy" class="closing" data-reveal aria-labelledby="privacy-title">
-  <div class="shell">
-    <div class="panel grid">
-      <div class="span-head">
-        <h2 id="privacy-title">Your audio never leaves your Mac.</h2>
-        <p class="lede">
-          Trimming, encoding, and transcription all happen on your machine, with no account and no
-          analytics. The only network traffic is the link you paste, the update checks on GitHub for the app
-          and yt-dlp, and the speech model Apple downloads the first time you transcribe in a new
-          language.
-        </p>
-      </div>
-      <div class="span-body">
-        <dl class="spec">
-          {
-            spec.map((row) => (
-              <div class="spec-row">
-                <dt>{row.term}</dt>
-                <dd>{row.value}</dd>
-              </div>
-            ))
-          }
-        </dl>
-        <DownloadButton />
-      </div>
-    </div>
+<Panel
+  id="privacy"
+  title="Your audio never leaves your Mac."
+  lede="Trimming, encoding, and transcription all happen on your machine, with no account and no analytics. The only network traffic is the link you paste, the update checks on GitHub for the app and yt-dlp, and the speech model Apple downloads the first time you transcribe in a new language."
+>
+  <div class="span-body">
+    <dl class="spec">
+      {
+        spec.map((row) => (
+          <div class="spec-row">
+            <dt>{row.term}</dt>
+            <dd>{row.value}</dd>
+          </div>
+        ))
+      }
+    </dl>
+    <DownloadButton />
   </div>
-</section>
+</Panel>
 
 <style>
-  .closing {
-    padding-top: var(--section);
-  }
-
-  .panel {
-    border-radius: var(--radius-lg);
-    background: var(--surface-2);
-    padding: clamp(1.75rem, 4vw, 3.5rem);
-    align-items: start;
-  }
-
-  .lede {
-    margin-top: 1rem;
-  }
-
   .span-body {
     display: flex;
     flex-direction: column;
@@ -77,7 +45,7 @@ const spec = [
     line-height: 1.45;
   }
 
-  .span-body :global(.download) {
+  .span-body :global(.btn) {
     align-self: flex-start;
     margin-top: clamp(1rem, 2vw, 1.5rem);
   }

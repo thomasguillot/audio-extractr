@@ -86,8 +86,6 @@ import Testing
             ])
     }
 
-    /// Real release shape: the install heading carries a parenthetical, and the
-    /// walkthrough plus the DMG checksum trail behind it.
     @Test func dropsInstallSectionWithParentheticalHeading() {
         let body = """
             Hosts Switchr now speaks French and Spanish.
@@ -142,7 +140,6 @@ import Testing
             ])
     }
 
-    /// Both real forms: the whole line bolded, and only the version bolded.
     @Test func dropsRequirementLineWhereverEmphasisFalls() {
         let body = """
             Smarter change tracking, a Cancel button, and a clearer fragment editor.

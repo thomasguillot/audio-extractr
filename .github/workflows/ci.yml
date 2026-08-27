@@ -17,14 +17,14 @@ jobs:
     runs-on: macos-26
     timeout-minutes: 30
     steps:
-      - uses: actions/checkout@v4
+      - uses: actions/checkout@v7.0.1
       - name: Kit tests
         run: cd ExtractrKit && swift test
   build-app:
     runs-on: macos-26
     timeout-minutes: 30
     steps:
-      - uses: actions/checkout@v4
+      - uses: actions/checkout@v7.0.1
       - name: Install xcodegen
         run: brew install xcodegen
       - name: Fetch binaries
@@ -34,3 +34,21 @@ jobs:
           cd App && xcodegen
           xcodebuild -project AudioExtractr.xcodeproj -scheme AudioExtractr \
             -destination 'platform=macOS' build
+  site-check:
+    if: github.event_name == 'pull_request'
+    runs-on: ubuntu-latest
+    timeout-minutes: 30
+    steps:
+      - uses: actions/checkout@v7.0.1
+      - uses: pnpm/setup@84cb39b217b10273981911c288cd62326dc7c6d2 # v2.0.2
+        with:
+          runtime: node@22
+          package-json-file: site/package.json
+          install: false
+          cache: true
+          cache-dependency-path: site/pnpm-lock.yaml
+      - name: Site type-check and build
+        run: |
+          pnpm --dir site install --frozen-lockfile
+          pnpm --dir site check
+          pnpm --dir site build

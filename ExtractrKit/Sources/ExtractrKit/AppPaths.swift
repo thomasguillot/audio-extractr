@@ -14,10 +14,16 @@ public enum AppPaths {
         binDir(root: supportRoot(fileManager: fileManager))
     }
 
+    /// Parent of every job directory. `AppModel` sweeps this at launch to clear what a
+    /// crashed session left behind, so the two must not spell the path out separately.
+    public static func scratchRoot(fileManager: FileManager = .default) -> URL {
+        fileManager.temporaryDirectory
+            .appendingPathComponent("AudioExtractr", isDirectory: true)
+    }
+
     /// Fresh per-extraction scratch directory; callers remove it when the job ends.
     public static func newJobDir(fileManager: FileManager = .default) throws -> URL {
-        let dir = fileManager.temporaryDirectory
-            .appendingPathComponent("AudioExtractr", isDirectory: true)
+        let dir = scratchRoot(fileManager: fileManager)
             .appendingPathComponent(UUID().uuidString, isDirectory: true)
         try fileManager.createDirectory(at: dir, withIntermediateDirectories: true)
         return dir

@@ -49,9 +49,11 @@ always false — trust `swift test` and `xcodebuild`.
 
 ## Security invariants — do not break these
 
-- **URL acceptance:** `URLPolicy.validated(_:)` is the single enforcement point —
-  https-only, loopback/private hosts rejected. Every path that accepts a remote URL
-  must go through it.
+- **URL acceptance:** `URLPolicy.validated(_:)` is the enforcement point for the URL a
+  user supplies — https-only, loopback/private hosts rejected. Any new path that takes a
+  URL from the user must go through it. Always read the host with
+  `host(percentEncoded: false)`: the default leaves the host encoded, and the child
+  process decodes it later, so the two would not be judging the same string.
 - **Process boundary:** only `ProcessRunner` spawns child processes. Arguments are
   passed as arrays — never through a shell. Exception: `UpdateInstaller` (ported
   verbatim from Hosts Switchr) runs hdiutil/ditto/xattr via its own argument-array
@@ -59,13 +61,29 @@ always false — trust `swift test` and `xcodebuild`.
   compile-time constant — do not interpolate variables into that script.
 - **yt-dlp updates:** `YtDlpUpdater` verifies the downloaded binary against the
   release's `SHA2-256SUMS` before an atomic replace; a failed verify leaves the
-  previous binary untouched.
+  previous binary untouched. The candidate tag must also sort strictly newer than the
+  installed one, so a replayed older release cannot be installed over a newer one.
+- **yt-dlp arguments:** both argument builders pass `--ignore-config`. Without it yt-dlp
+  also reads `~/.config/yt-dlp/config`, so the effective arguments are not the ones the
+  app built, and an `--exec` line there runs on every extraction.
+- **App updates:** the DMG is verified against the SHA-256 published in the release body
+  before it is mounted, and the download is refused otherwise. `UpdatePlan.evaluate`
+  fails closed on a release whose body carries no digest.
 - **ffmpeg is bundled-only** — never executed from a user-writable location.
 
 ## Known limitations
 
 - `URLPolicy` blocks literal private/loopback IPs, not hostnames that resolve to
   them (DNS rebinding is out of scope).
+- `URLPolicy` gates the URL the user pastes, not everything yt-dlp subsequently fetches.
+  yt-dlp follows redirects with no policy of its own, including https to http, so a
+  cooperating remote host can still reach a private address. Closing this needs the child
+  proxied through a policy-enforcing local proxy.
+- The DMG digest rides the same connection as the asset URL, so it stops a tampered asset
+  host, not an attacker who can rewrite the whole API response. Signing the DMG (Sparkle
+  style EdDSA, which needs no Developer Program) is the real fix and is not done yet.
+- `SHA2-256SUMS` for yt-dlp is likewise unauthenticated: it comes from the same release
+  as the binary it describes.
 - Local-file probing parses `ffmpeg -i` stderr (no ffprobe bundled — an
   intentional spec deviation).
 - Acknowledgements ship in the DMG and repo, not the About panel.
@@ -81,6 +99,12 @@ squash/rebase merge.
 Bump `MARKETING_VERSION` in `App/project.yml` → `./scripts/make-dmg.sh` →
 `gh release create vX.Y.Z dist/AudioExtractr-X.Y.Z.dmg --title "Audio Extractr X.Y.Z" --notes "…" --latest`
 with the unsigned first-launch note and the DMG SHA-256 in the body.
+
+**The DMG SHA-256 line is load-bearing, not documentation.** The in-app updater verifies
+the download against it and `UpdatePlan` treats a release without one as "no update
+available", so omitting it ships a release nobody can update to. Publish it as a 64-character
+hex digest somewhere after a `SHA-256` marker; the existing `**DMG SHA-256**` block is the
+format the parser was built against.
 
 ## What NOT to do
 
