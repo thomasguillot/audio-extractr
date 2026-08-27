@@ -14,8 +14,6 @@
   --on-accent: #ffffff;
   --link: #006cf0;
 
-  --shadow-window: 0 1px 2px rgb(20 22 26 / 0.05), 0 10px 28px rgb(20 22 26 / 0.08);
-
   --radius-sm: 8px;
   --radius-md: 12px;
   --radius-lg: 18px;
@@ -49,7 +47,6 @@
     --text: #ecedef;
     --muted: #9ba0a8;
     --link: #1b86ff;
-    --shadow-window: 0 1px 2px rgb(0 0 0 / 0.4), 0 14px 36px rgb(0 0 0 / 0.45);
   }
 
   @supports (color: oklch(from red 0.5 c h)) {
