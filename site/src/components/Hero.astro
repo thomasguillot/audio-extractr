@@ -19,21 +19,21 @@ try {
   <div class="shell">
     <div class="grid">
       <div class="copy">
-        <p class="wordmark" data-hero>
+        <p class="wordmark">
           <img src={`${base}/icon.svg`} alt="" width="32" height="32" />
           Audio Extractr
           {version && <span class="version">{version}</span>}
         </p>
-        <h1 data-hero>Turn any video into an MP3.</h1>
-        <p class="lede" data-hero>
+        <h1>Turn any video into an MP3.</h1>
+        <p class="lede">
           Paste a link or drop a file, trim it, set the speed, and save an MP3, plus a transcript if
           you want one.
         </p>
-        <p class="requirements label" data-hero>
+        <p class="requirements label">
           Free<span class="sep"> · </span>MIT-licensed<span class="sep"> · </span>Apple
           silicon<span class="sep"> · </span>macOS 26 or later
         </p>
-        <div class="cta" data-hero>
+        <div class="cta">
           <DownloadButton />
           <a class="ghost" href="https://github.com/thomasguillot/audio-extractr">View on GitHub</a>
         </div>
@@ -51,27 +51,6 @@ try {
     </div>
   </div>
 </header>
-
-<script>
-  import { animate, stagger } from "motion";
-  import { SPRING_CRISP, STAGGER_DELAY, prefersReducedMotion } from "../motion";
-
-  function enterHero() {
-    if (prefersReducedMotion()) return;
-    const items = document.querySelectorAll<HTMLElement>("[data-hero]");
-    items.forEach((item) => {
-      item.style.opacity = "0";
-      item.style.transform = "translateY(10px)";
-    });
-    animate(
-      items,
-      { opacity: 1, transform: "translateY(0px)" },
-      { ...SPRING_CRISP, delay: stagger(STAGGER_DELAY) },
-    );
-  }
-
-  enterHero();
-</script>
 
 <style>
   .hero {

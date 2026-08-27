@@ -266,8 +266,7 @@ main:focus {
   }
 
   [data-reveal],
-  [data-reveal-image],
-  [data-hero] {
+  [data-reveal-image] {
     opacity: 1 !important;
     transform: none !important;
   }

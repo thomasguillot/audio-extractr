@@ -10,8 +10,6 @@ export const SPRING_SOFT = {
   bounce: 0.08,
 } as const;
 
-export const STAGGER_DELAY = 0.08;
-
 export function prefersReducedMotion(): boolean {
   return window.matchMedia("(prefers-reduced-motion: reduce)").matches;
 }
