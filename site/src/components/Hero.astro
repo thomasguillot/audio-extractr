@@ -69,10 +69,14 @@ try {
     gap: clamp(1rem, 2vw, 1.5rem);
   }
 
+  .shot {
+    max-width: 40rem;
+    margin-top: clamp(1.5rem, 4vw, 3rem);
+  }
+
   @media (min-width: 900px) {
     .hero {
-      padding-top: 11rem;
-      padding-bottom: 7.5rem;
+      padding-top: var(--section);
     }
 
     .hero .grid {
@@ -126,10 +130,5 @@ try {
 
   .sep {
     opacity: 0.6;
-  }
-
-  .shot {
-    max-width: 40rem;
-    margin-top: clamp(1.5rem, 4vw, 3rem);
   }
 </style>
