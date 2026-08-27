@@ -1,31 +1,18 @@
 ---
-import Screenshot from "./Screenshot.astro";
 import Section from "./Section.astro";
 
 const steps = [
   {
-    name: "input",
     title: "Paste a link or drop a file",
-    body: "Paste a link and the audio is fetched for you. Or drop any audio or video file straight onto the window.",
-    width: 640,
-    height: 402,
-    alt: "The Audio Extractr input screen: a field for a link with a Fetch button, and a drop zone for an audio or video file.",
+    body: "Paste a link from almost any video or audio site and the audio is fetched for you. Or drop any file straight onto the window.",
   },
   {
-    name: "edit",
-    title: "Trim and set the speed",
-    body: "Drag the handles on the waveform to keep just the part you want. Preview it, set the speed, and check the box to save an experimental transcript too.",
-    width: 640,
-    height: 402,
-    alt: "The edit screen: a waveform with two trim handles around the selected part, a speed slider, a Save transcript checkbox with a language menu, and an Extract MP3 button.",
+    title: "Edit and transcribe",
+    body: "Drag the handles on the waveform to keep the part you want, then set the speed and preview it. Check the box to save a transcript (experimental).",
   },
   {
-    name: "done",
     title: "Save as MP3",
-    body: "One click writes a clean MP3 to your folder. No save dialog, and nothing gets overwritten.",
-    width: 640,
-    height: 402,
-    alt: "The done screen: a green check, the saved filename, and Show in Finder and Extract Another buttons.",
+    body: "One click writes a clean MP3 to your folder. No save dialog, nothing overwritten.",
   },
 ] as const;
 ---
@@ -35,18 +22,13 @@ const steps = [
   title="How it works"
   lede="Three steps from a link or a file to an MP3 on disk, with nothing to configure before you start."
 >
-  <ol class="steps span-all" role="list">
+  <ol class="steps grid span-all" role="list">
     {
       steps.map((step, index) => (
-        <li class="grid step">
-          <h3 class="title span-head">
-            <span class="num">{index + 1}</span>
-            {step.title}
-          </h3>
-          <div class="span-body">
-            <Screenshot name={step.name} alt={step.alt} width={step.width} height={step.height} loading="lazy" />
-            <p>{step.body}</p>
-          </div>
+        <li class="step">
+          <span class="num">{index + 1}</span>
+          <h3 class="title">{step.title}</h3>
+          <p>{step.body}</p>
         </li>
       ))
     }
@@ -61,33 +43,35 @@ const steps = [
   }
 
   .step {
-    --row-gap: 1rem;
-    max-width: none;
-    padding-block: var(--col-gap);
-    align-items: start;
+    grid-column: span 4;
+    border-radius: var(--radius-lg);
+    background: var(--surface-2);
+    padding: clamp(1.5rem, 3vw, 2rem);
   }
 
-  .step + .step {
-    border-top: 1px solid var(--line);
-  }
-
-  .step:last-child {
-    padding-bottom: 0;
-  }
-
-  .title {
-    display: flex;
-    gap: 24px;
-    align-items: baseline;
+  @media (max-width: 899px) {
+    .step {
+      grid-column: 1 / -1;
+    }
   }
 
   .num {
+    display: block;
+    margin-bottom: 0.75rem;
     color: var(--link);
+    font-family: var(--font-display);
+    font-size: clamp(1.5rem, 1.9vw, 1.625rem);
+    font-weight: 500;
+    line-height: 1.2;
+    letter-spacing: -0.008em;
     font-variant-numeric: tabular-nums;
+  }
+
+  .title {
+    margin-bottom: 0.75rem;
   }
 
   p {
     color: var(--muted);
-    margin-top: 16px;
   }
 </style>
