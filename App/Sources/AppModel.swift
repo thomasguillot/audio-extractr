@@ -311,6 +311,9 @@ extension AppModel {
                 let local = try? await probeService.probe(.localFile(downloaded)),
                 let duration = local.duration
             {
+                // try? also swallows CancellationError, so a cancelled prepare could
+                // otherwise write this job's duration over a newer job's probe.
+                try Task.checkCancellation()
                 probe = MediaProbe(title: probe?.title, duration: duration)
             }
         }
