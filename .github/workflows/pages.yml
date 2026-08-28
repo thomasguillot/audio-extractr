@@ -8,6 +8,8 @@ on:
     branches: [main]
     paths:
       - "site/**"
+      # The hero reads MARKETING_VERSION from here, so a release bump has to redeploy.
+      - "App/project.yml"
       - ".github/workflows/pages.yml"
   workflow_dispatch:
 
