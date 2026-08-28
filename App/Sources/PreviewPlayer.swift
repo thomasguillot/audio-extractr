@@ -39,7 +39,10 @@ final class PreviewPlayer {
             forName: AVPlayerItem.didPlayToEndTimeNotification,
             object: item, queue: .main
         ) { [weak self] _ in
-            Task { @MainActor [weak self] in self?.isPlaying = false }
+            Task { @MainActor [weak self] in
+                self?.isPlaying = false
+                self?.rewind()
+            }
         }
     }
 
@@ -57,13 +60,22 @@ final class PreviewPlayer {
         if isPlaying { player.rate = rate }
     }
 
+    /// The playhead is drawn at its fraction of the strip, so leaving it on the duration
+    /// parks it under the right edge and it reads as having vanished.
+    private func rewind() {
+        player.seek(to: .zero)
+        playheadTime = 0
+    }
+
+    private var isAtEnd: Bool {
+        guard let item = player.currentItem, item.duration.isNumeric else { return false }
+        return player.currentTime() >= item.duration
+    }
+
     private func play() {
-        // AVPlayer will not restart from the end of an item on rate alone, so playing after
-        // the preview has run out would set isPlaying with nothing happening.
-        if player.currentItem.map({ player.currentTime() >= $0.duration }) == true {
-            player.seek(to: .zero)
-            playheadTime = 0
-        }
+        // Reached by scrubbing to the very end: AVPlayer will not restart from there on
+        // rate alone, so this would otherwise set isPlaying with nothing happening.
+        if isAtEnd { rewind() }
         player.rate = rate
         isPlaying = true
     }
