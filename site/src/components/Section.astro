@@ -4,14 +4,20 @@ interface Props {
   title: string;
   lede?: string;
   class?: string;
+  staggerBody?: boolean;
 }
 
-const { id, title, lede, class: className } = Astro.props;
+const { id, title, lede, class: className, staggerBody = false } = Astro.props;
 ---
 
-<section id={id} class:list={["section", className]} data-reveal aria-labelledby={`${id}-title`}>
+<section
+  id={id}
+  class:list={["section", className]}
+  data-reveal={staggerBody ? undefined : true}
+  aria-labelledby={`${id}-title`}
+>
   <div class="shell">
-    <div class="grid head">
+    <div class="grid head" data-reveal={staggerBody ? true : undefined}>
       <h2 id={`${id}-title`} class="span-head">{title}</h2>
       {lede && <p class="lede span-body">{lede}</p>}
     </div>

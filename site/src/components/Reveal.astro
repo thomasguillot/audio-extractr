@@ -1,45 +1,43 @@
 <script>
   import { animate, inView } from "motion";
-  import { SPRING_CRISP, SPRING_SOFT, prefersReducedMotion } from "../motion";
+  import { SPRING_CRISP, prefersReducedMotion } from "../motion";
 
-  function revealSections() {
-    if (prefersReducedMotion()) return;
+  const FROM = "translateY(14px) scale(1)";
+  const SETTLED = "translateY(0px) scale(1)";
+  const MARGIN = "0px 0px -10% 0px";
 
-    const sections = document.querySelectorAll<HTMLElement>("[data-reveal]");
-    sections.forEach((section) => {
-      if (section.getBoundingClientRect().top < window.innerHeight * 0.9) return;
-      section.style.opacity = "0";
-      section.style.transform = "translateY(14px)";
+  function reveal(selector: string, stagger = 0) {
+    document.querySelectorAll<HTMLElement>(selector).forEach((trigger) => {
+      if (trigger.getBoundingClientRect().top < window.innerHeight * 0.9) return;
+
+      const items = stagger
+        ? Array.from(trigger.querySelectorAll<HTMLElement>(":scope > *"))
+        : [trigger];
+
+      items.forEach((item) => {
+        item.style.opacity = "0";
+        item.style.transform = FROM;
+      });
+
       const stop = inView(
-        section,
+        trigger,
         () => {
           stop();
-          animate(section, { opacity: 1, transform: "translateY(0px)" }, SPRING_CRISP);
+          items.forEach((item, index) => {
+            animate(
+              item,
+              { opacity: 1, transform: SETTLED },
+              { ...SPRING_CRISP, delay: index * stagger },
+            );
+          });
         },
-        { margin: "0px 0px -10% 0px" },
+        { margin: MARGIN },
       );
     });
   }
 
-  function revealImages() {
-    if (prefersReducedMotion()) return;
-
-    const shots = document.querySelectorAll<HTMLElement>("[data-reveal-image]");
-    shots.forEach((shot) => {
-      if (shot.getBoundingClientRect().top < window.innerHeight * 0.9) return;
-      shot.style.opacity = "0";
-      shot.style.transform = "translateY(20px) scale(0.985)";
-      const stop = inView(
-        shot,
-        () => {
-          stop();
-          animate(shot, { opacity: 1, transform: "translateY(0px) scale(1)" }, SPRING_SOFT);
-        },
-        { margin: "0px 0px -15% 0px" },
-      );
-    });
+  if (!prefersReducedMotion()) {
+    reveal("[data-reveal]");
+    reveal("[data-reveal-stagger]", 0.05);
   }
-
-  revealSections();
-  revealImages();
 </script>
