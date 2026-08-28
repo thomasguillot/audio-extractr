@@ -58,6 +58,12 @@ final class PreviewPlayer {
     }
 
     private func play() {
+        // AVPlayer will not restart from the end of an item on rate alone, so playing after
+        // the preview has run out would set isPlaying with nothing happening.
+        if player.currentItem.map({ player.currentTime() >= $0.duration }) == true {
+            player.seek(to: .zero)
+            playheadTime = 0
+        }
         player.rate = rate
         isPlaying = true
     }
