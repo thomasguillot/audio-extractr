@@ -72,18 +72,15 @@ public struct YtDlpUpdater: Sendable {
     private let binDir: URL
     private let bundledTagFile: URL?
     private let fetcher: ReleaseFetcher
-    private let session: URLSession
 
     public init(
         binDir: URL,
         bundledTagFile: URL? = nil,
-        fetcher: ReleaseFetcher = ReleaseFetcher(repoSlug: "yt-dlp/yt-dlp"),
-        session: URLSession = .shared
+        fetcher: ReleaseFetcher = ReleaseFetcher(repoSlug: "yt-dlp/yt-dlp")
     ) {
         self.binDir = binDir
         self.bundledTagFile = bundledTagFile
         self.fetcher = fetcher
-        self.session = session
     }
 
     /// The newer of the self-updated and bundled tags, so an app update that ships a newer
@@ -136,7 +133,7 @@ public struct YtDlpUpdater: Sendable {
         var request = URLRequest(url: url)
         request.timeoutInterval = 300
         do {
-            return try await HTTPGuard.data(for: request, session: session, maxBytes: maxBytes)
+            return try await HTTPGuard.data(for: request, maxBytes: maxBytes)
         } catch let failure as HTTPGuard.Failure {
             throw UpdateError(failure)
         }
