@@ -152,28 +152,30 @@ const faqs = [
     text-decoration: none;
   }
 
-  @supports selector(::details-content) {
-    .faq summary + p {
-      margin-top: 0;
-    }
+  @media screen {
+    @supports selector(::details-content) and (interpolate-size: allow-keywords) {
+      .faq summary + p {
+        margin-top: 0;
+      }
 
-    .faq::details-content {
-      block-size: 0;
-      margin-block-start: 0;
-      overflow: hidden;
-      opacity: 0;
-      transition:
-        block-size 200ms var(--ease-out),
-        margin-block-start 200ms var(--ease-out),
-        content-visibility 200ms var(--ease-out),
-        opacity 200ms var(--ease-out);
-      transition-behavior: allow-discrete;
-    }
+      .faq::details-content {
+        block-size: 0;
+        margin-block-start: 0;
+        overflow: hidden;
+        opacity: 0;
+        transition:
+          block-size 200ms var(--ease-out),
+          margin-block-start 200ms var(--ease-out),
+          content-visibility 200ms var(--ease-out),
+          opacity 200ms var(--ease-out);
+        transition-behavior: allow-discrete;
+      }
 
-    .faq[open]::details-content {
-      block-size: auto;
-      margin-block-start: calc(1rem - var(--col-gap));
-      opacity: 1;
+      .faq[open]::details-content {
+        block-size: auto;
+        margin-block-start: calc(1rem - var(--col-gap));
+        opacity: 1;
+      }
     }
   }
 
