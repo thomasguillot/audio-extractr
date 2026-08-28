@@ -29,7 +29,9 @@ final class AppModel {
     private(set) var probe: MediaProbe?
     private(set) var displayTitle = ""
     private(set) var probingIsRemote = false
-    private(set) var selection: TrimSelection?
+    private(set) var selection: TrimSelection? {
+        didSet { player?.setRange(selection) }
+    }
     private(set) var peaks: [Float]?
     private(set) var peaksUnavailable = false
     private(set) var player: PreviewPlayer?
@@ -351,6 +353,7 @@ extension AppModel {
             }
             guard !Task.isCancelled else { made?.teardown(); return }
             made?.setRate(speed)
+            made?.setRange(selection)
             player = made
         }
     }

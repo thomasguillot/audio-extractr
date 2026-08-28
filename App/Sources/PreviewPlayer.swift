@@ -1,4 +1,5 @@
 import AVFoundation
+import ExtractrKit
 import Observation
 
 @MainActor
@@ -8,6 +9,7 @@ final class PreviewPlayer {
     private var timeObserver: Any?
     private var endObserver: NSObjectProtocol?
     private var rate: Float = 1
+    private var range: TrimSelection?
     private(set) var isPlaying = false
     private(set) var playheadTime: Double = 0
 
@@ -60,21 +62,32 @@ final class PreviewPlayer {
         if isPlaying { player.rate = rate }
     }
 
-    /// The playhead is drawn at its fraction of the strip, so leaving it on the duration
-    /// parks it under the right edge and it reads as having vanished.
-    private func rewind() {
-        player.seek(to: .zero)
-        playheadTime = 0
+    /// The preview is of the selection, so playback stops at its end rather than the
+    /// file's. forwardPlaybackEndTime posts didPlayToEndTime there, which is what rewinds.
+    func setRange(_ range: TrimSelection?) {
+        self.range = range
+        guard let range, let item = player.currentItem else { return }
+        item.forwardPlaybackEndTime = CMTime(seconds: range.end, preferredTimescale: 600)
     }
 
+    /// The playhead is drawn at its fraction of the strip, so leaving it on the end parks
+    /// it under the right edge and it reads as having vanished.
+    private func rewind() {
+        let start = range?.start ?? 0
+        player.seek(to: CMTime(seconds: start, preferredTimescale: 600))
+        playheadTime = start
+    }
+
+    /// Playback can go no further: the end of the selection, or of the file without one.
     private var isAtEnd: Bool {
+        if let range { return player.currentTime().seconds >= range.end }
         guard let item = player.currentItem, item.duration.isNumeric else { return false }
         return player.currentTime() >= item.duration
     }
 
     private func play() {
-        // Reached by scrubbing to the very end: AVPlayer will not restart from there on
-        // rate alone, so this would otherwise set isPlaying with nothing happening.
+        // Also reached by scrubbing to the very end: AVPlayer will not restart from there
+        // on rate alone, so this would otherwise set isPlaying with nothing happening.
         if isAtEnd { rewind() }
         player.rate = rate
         isPlaying = true
