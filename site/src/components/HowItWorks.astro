@@ -21,8 +21,9 @@ const steps = [
   id="how"
   title="How it works"
   lede="Three steps from a link or a file to an MP3 on disk, with nothing to configure before you start."
+  staggerBody
 >
-  <ol class="steps grid span-all" role="list">
+  <ol class="steps grid span-all" role="list" data-reveal-stagger>
     {
       steps.map((step, index) => (
         <li class="step">

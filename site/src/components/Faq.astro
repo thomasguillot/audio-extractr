@@ -118,6 +118,7 @@ const faqs = [
     mask: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 16 16'%3E%3Cpath d='M5.5 3 L10.5 8 L5.5 13' fill='none' stroke='%23000' stroke-width='2' stroke-linecap='round' stroke-linejoin='round'/%3E%3C/svg%3E")
       center / contain no-repeat;
     transform: rotate(90deg);
+    transition: transform 200ms var(--ease-in-out);
   }
 
   .faq[open] summary::before {
@@ -149,5 +150,43 @@ const faqs = [
     margin-left: 4px;
     font-size: 0.9em;
     text-decoration: none;
+  }
+
+  @supports selector(::details-content) {
+    .faq summary + p {
+      margin-top: 0;
+    }
+
+    .faq::details-content {
+      block-size: 0;
+      margin-block-start: 0;
+      overflow: hidden;
+      opacity: 0;
+      transition:
+        block-size 200ms var(--ease-out),
+        margin-block-start 200ms var(--ease-out),
+        content-visibility 200ms var(--ease-out),
+        opacity 200ms var(--ease-out);
+      transition-behavior: allow-discrete;
+    }
+
+    .faq[open]::details-content {
+      block-size: auto;
+      margin-block-start: calc(1rem - var(--col-gap));
+      opacity: 1;
+    }
+  }
+
+  @media (prefers-reduced-motion: reduce) {
+    summary::before {
+      transition-duration: 0s;
+    }
+
+    .faq::details-content {
+      transition:
+        content-visibility 200ms var(--ease-out),
+        opacity 200ms var(--ease-out);
+      transition-behavior: allow-discrete;
+    }
   }
 </style>

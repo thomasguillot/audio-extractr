@@ -14,7 +14,7 @@ interface Props {
 const { name, alt, width, height, loading = "lazy", priority = false, class: className } = Astro.props;
 ---
 
-<picture class:list={["shot", className]} data-reveal-image={priority ? undefined : true}>
+<picture class:list={["shot", className]}>
   <source srcset={`${base}/screenshots/${name}-dark.png`} media="(prefers-color-scheme: dark)" />
   <img
     src={`${base}/screenshots/${name}-light.png`}

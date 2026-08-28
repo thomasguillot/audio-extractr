@@ -1,5 +1,6 @@
 :root {
   color-scheme: light dark;
+  interpolate-size: allow-keywords;
 
   --bg: #fcfcfd;
   --surface: #ffffff;
@@ -17,6 +18,9 @@
   --radius-sm: 8px;
   --radius-md: 12px;
   --radius-lg: 18px;
+
+  --ease-out: cubic-bezier(0.23, 1, 0.32, 1);
+  --ease-in-out: cubic-bezier(0.77, 0, 0.175, 1);
 
   --shell: 78rem;
   --gutter: clamp(1.25rem, 5vw, 4rem);
@@ -60,10 +64,6 @@
 *::before,
 *::after {
   box-sizing: border-box;
-}
-
-html {
-  scroll-behavior: smooth;
 }
 
 body {
@@ -167,6 +167,7 @@ a {
   text-decoration: underline;
   text-decoration-color: color-mix(in oklab, currentColor 35%, transparent);
   text-underline-offset: 3px;
+  transition: text-decoration-color 160ms ease;
 }
 
 a:hover {
@@ -190,7 +191,7 @@ a:hover {
   background: var(--accent);
   color: var(--on-accent);
   text-decoration: none;
-  transition: filter 160ms ease, background 160ms ease;
+  transition: filter 160ms ease, background 160ms ease, transform 160ms var(--ease-out);
 }
 
 @supports not (color: oklch(from red 0.5 c h)) {
@@ -203,6 +204,10 @@ a:hover {
   .btn:hover {
     background: oklch(from var(--accent) calc(l - 0.06) c h);
   }
+}
+
+.btn:active {
+  transform: scale(0.97);
 }
 
 :focus-visible {
@@ -285,16 +290,15 @@ main:focus {
 }
 
 @media (prefers-reduced-motion: reduce) {
-  html {
-    scroll-behavior: auto;
-  }
-
   *,
   *::before,
   *::after {
     animation-duration: 0.01ms !important;
     animation-iteration-count: 1 !important;
-    transition-duration: 0.01ms !important;
+  }
+
+  .btn:active {
+    transform: none;
   }
 }
 
@@ -314,7 +318,7 @@ main:focus {
   }
 
   [data-reveal],
-  [data-reveal-image] {
+  [data-reveal-stagger] > * {
     opacity: 1 !important;
     transform: none !important;
   }
