@@ -1,6 +1,8 @@
 import SwiftUI
 
 struct MainWindowView: View {
+    static let contentSize = CGSize(width: 640, height: 370)
+
     @Environment(AppModel.self) private var model
 
     var body: some View {
@@ -20,7 +22,7 @@ struct MainWindowView: View {
                 DoneView(savedURL: url)
             }
         }
-        .frame(width: 640, height: 370)
+        .frame(width: Self.contentSize.width, height: Self.contentSize.height)
         .alert(
             "Transcript not saved",
             isPresented: Binding(

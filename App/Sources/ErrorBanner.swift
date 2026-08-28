@@ -14,11 +14,16 @@ struct ErrorBanner: View {
                     .buttonStyle(.link)
                     .font(.caption)
                 if showDetail {
-                    Text(detail)
-                        .font(.caption.monospaced())
-                        .textSelection(.enabled)
-                        .fixedSize(horizontal: false, vertical: true)
-                        .frame(maxWidth: .infinity, alignment: .leading)
+                    // yt-dlp's own output, so it has no length limit of its own and the
+                    // window it sits in cannot grow.
+                    ScrollView {
+                        Text(detail)
+                            .font(.caption.monospaced())
+                            .textSelection(.enabled)
+                            .fixedSize(horizontal: false, vertical: true)
+                            .frame(maxWidth: .infinity, alignment: .leading)
+                    }
+                    .frame(maxHeight: 120)
                 }
             }
         }
