@@ -15,6 +15,29 @@ private final class ProcessBox: @unchecked Sendable {
     let process = Process()
     let stdout = Pipe()
     let stderr = Pipe()
+
+    private let lock = NSLock()
+    private var launched = false
+    private var cancelled = false
+
+    /// Launch and cancel share a lock so neither can land in the other's window: a cancel
+    /// that arrives first stops the launch, and one that arrives after always sees a
+    /// process it can terminate. Terminating an unlaunched Process raises.
+    func launch() throws -> Bool {
+        lock.lock()
+        defer { lock.unlock() }
+        guard !cancelled else { return false }
+        try process.run()
+        launched = true
+        return true
+    }
+
+    func cancel() {
+        lock.lock()
+        defer { lock.unlock() }
+        cancelled = true
+        if launched, process.isRunning { process.terminate() }
+    }
 }
 
 /// The only unit in the app that spawns child processes. Arguments are always
@@ -86,19 +109,22 @@ public struct ProcessRunner: Sendable {
             let exitCode: Int32 = try await withTaskCancellationHandler {
                 try await withCheckedThrowingContinuation { continuation in
                     box.process.terminationHandler = { continuation.resume(returning: $0.terminationStatus) }
-                    do {
-                        try box.process.run()
-                    } catch {
+                    // Nothing else will ever close the pipes' write ends when the child does
+                    // not start, so outTask/errTask would block on read() forever.
+                    func abandon(_ error: Error) {
                         box.process.terminationHandler = nil
-                        // Nothing else will ever close the pipes' write ends after a failed
-                        // launch, so outTask/errTask would block on read() forever.
                         box.stdout.fileHandleForWriting.closeFile()
                         box.stderr.fileHandleForWriting.closeFile()
-                        continuation.resume(throwing: ProcessRunnerError.launchFailed(error.localizedDescription))
+                        continuation.resume(throwing: error)
+                    }
+                    do {
+                        guard try box.launch() else { return abandon(CancellationError()) }
+                    } catch {
+                        abandon(ProcessRunnerError.launchFailed(error.localizedDescription))
                     }
                 }
             } onCancel: {
-                if box.process.isRunning { box.process.terminate() }
+                box.cancel()
             }
 
             let stdout = await outTask.value
