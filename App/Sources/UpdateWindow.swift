@@ -11,6 +11,7 @@ final class UpdateWindowController: NSObject, NSWindowDelegate {
 
     private var window: NSWindow?
     private var model: UpdateWindowModel?
+    private var hosting: NSHostingView<UpdateWindowView>?
 
     func show(_ update: UpdatePlan.AvailableUpdate, currentVersion: String) {
         if let window {
@@ -51,11 +52,45 @@ final class UpdateWindowController: NSObject, NSWindowDelegate {
         window.standardWindowButton(.zoomButton)?.isEnabled = false
         window.delegate = self
         window.contentView = hosting
+        self.hosting = hosting
         window.setFrame(frame, display: true)
         self.window = window
 
+        trackPhase()
+
         NSApp.activate(ignoringOtherApps: true)
         window.makeKeyAndOrderFront(nil)
+    }
+
+    /// The frame is measured from the available phase, which is the shortest of the four:
+    /// one row of buttons against two or three for the others. Nothing in the view can take
+    /// up the slack either, since the notes box is a fixed height and the phase bars use
+    /// fixedSize. Without re-fitting, Install and Relaunch falls outside the window.
+    private func trackPhase() {
+        guard let model else { return }
+        withObservationTracking {
+            _ = model.phase
+        } onChange: { [weak self] in
+            // onChange runs before the new value lands, so re-fit on the next turn.
+            Task { @MainActor in
+                self?.fitToContent()
+                self?.trackPhase()
+            }
+        }
+    }
+
+    private func fitToContent() {
+        guard let window, let hosting else { return }
+        hosting.layoutSubtreeIfNeeded()
+        let content = hosting.fittingSize
+        guard content.height > 0 else { return }
+        let target = window.frameRect(forContentRect: CGRect(origin: .zero, size: content))
+        guard abs(target.height - window.frame.height) > 0.5 else { return }
+        var frame = window.frame
+        // Grow downward from the title bar rather than about the centre.
+        frame.origin.y += frame.height - target.height
+        frame.size = target.size
+        window.setFrame(frame, display: true, animate: true)
     }
 
     func windowWillClose(_ notification: Notification) {
@@ -63,6 +98,7 @@ final class UpdateWindowController: NSObject, NSWindowDelegate {
         model?.discardDownload()
         model = nil
         window = nil
+        hosting = nil
     }
 }
 
@@ -309,10 +345,14 @@ private struct UpdateWindowView: View {
         VStack(alignment: .leading, spacing: 8) {
             Text("Update failed")
                 .font(.system(size: 12, weight: .semibold))
-            Text(message)
-                .font(.system(size: 12))
-                .foregroundStyle(.secondary)
-                .fixedSize(horizontal: false, vertical: true)
+            ScrollView {
+                Text(message)
+                    .font(.system(size: 12))
+                    .foregroundStyle(.secondary)
+                    .fixedSize(horizontal: false, vertical: true)
+                    .frame(maxWidth: .infinity, alignment: .leading)
+            }
+            .frame(maxHeight: 90)
             HStack {
                 Spacer()
                 if model.update.pageURL != nil {

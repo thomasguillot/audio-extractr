@@ -7,8 +7,19 @@ struct EditView: View {
     private static let speedPresets: [Double] = [1, 1.25, 1.5, 2]
 
     var body: some View {
+        // The window is a fixed 370pt and cannot grow, so an error banner has to push the
+        // controls into a scroll rather than off the bottom. minHeight keeps the ordinary
+        // layout centred, so the scroll only appears when something is added.
+        ScrollView {
+            content
+                .padding(20)
+                .frame(minHeight: MainWindowView.contentSize.height)
+        }
+    }
+
+    private var content: some View {
         @Bindable var model = model
-        VStack(alignment: .leading, spacing: 28) {
+        return VStack(alignment: .leading, spacing: 28) {
             if let message = model.errorMessage {
                 ErrorBanner(message: message, detail: model.errorDetail)
             }
@@ -78,7 +89,6 @@ struct EditView: View {
                     .keyboardShortcut(.defaultAction)
             }
         }
-        .padding(20)
     }
 
     private var speedRow: some View {
