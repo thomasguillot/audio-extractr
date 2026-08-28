@@ -67,6 +67,26 @@ import Testing
         #expect(throws: URLPolicyError.blockedHost) { try URLPolicy.validated(candidate) }
     }
 
+    /// `inet_pton` also accepts IPv4-compatible (`::a.b.c.d`) and NAT64 (`64:ff9b::a.b.c.d`)
+    /// form, so the embedded IPv4 must be judged there too, not only in IPv4-mapped form.
+    @Test(arguments: [
+        "https://[::127.0.0.1]/a", "https://[0:0:0:0:0:0:127.0.0.1]/a",
+        "https://[::10.1.2.3]/a", "https://[::169.254.169.254]/a",
+        "https://[64:ff9b::127.0.0.1]/a", "https://[64:ff9b::192.168.1.5]/a",
+    ])
+    func rejectsIPv6EmbeddedIPv4(_ candidate: String) {
+        #expect(throws: URLPolicyError.blockedHost) { try URLPolicy.validated(candidate) }
+    }
+
+    @Test func allowsIPv6EmbeddingPublicIPv4() throws {
+        _ = try URLPolicy.validated("https://[::ffff:93.184.216.34]/a")
+        _ = try URLPolicy.validated("https://[64:ff9b::93.184.216.34]/a")
+    }
+
+    @Test func malformedIPv6BytesFailClosed() {
+        #expect(URLPolicy.isBlockedIPv6([0, 0, 0]))
+    }
+
     @Test func percentEncodingDoesNotBreakOrdinaryHosts() throws {
         let url = try URLPolicy.validated("https://ex%61mple.com/watch")
         #expect(url.absoluteString == "https://ex%61mple.com/watch")

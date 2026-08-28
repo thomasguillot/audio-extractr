@@ -95,8 +95,9 @@ public enum URLPolicy {
         return withUnsafeBytes(of: &addr) { Array($0) }
     }
 
-    private static func isBlockedIPv6(_ bytes: [UInt8]) -> Bool {
-        guard bytes.count == 16 else { return false }
+    static func isBlockedIPv6(_ bytes: [UInt8]) -> Bool {
+        // A malformed byte array must block, not allow — fail closed.
+        guard bytes.count == 16 else { return true }
 
         // Loopback ::1
         if bytes[0..<15].allSatisfy({ $0 == 0 }), bytes[15] == 1 { return true }
@@ -106,9 +107,18 @@ public enum URLPolicy {
         if bytes[0] == 0xfe, (bytes[1] & 0xc0) == 0x80 { return true }
         // Unique-local fc00::/7 — the IPv6 counterpart of RFC1918
         if (bytes[0] & 0xfe) == 0xfc { return true }
-        // IPv4-mapped ::ffff:a.b.c.d — evaluate the embedded IPv4 range.
+
+        // Every form inet_pton accepts that carries an IPv4 address: mapped
+        // ::ffff:a.b.c.d, compatible ::a.b.c.d, and NAT64 64:ff9b::a.b.c.d.
+        let embedded = [bytes[12], bytes[13], bytes[14], bytes[15]]
         if bytes[0..<10].allSatisfy({ $0 == 0 }), bytes[10] == 0xff, bytes[11] == 0xff {
-            return isBlockedIPv4([bytes[12], bytes[13], bytes[14], bytes[15]])
+            return isBlockedIPv4(embedded)
+        }
+        if bytes[0..<12].allSatisfy({ $0 == 0 }) { return isBlockedIPv4(embedded) }
+        if bytes[0] == 0, bytes[1] == 0x64, bytes[2] == 0xff, bytes[3] == 0x9b,
+            bytes[4..<12].allSatisfy({ $0 == 0 })
+        {
+            return isBlockedIPv4(embedded)
         }
         return false
     }
