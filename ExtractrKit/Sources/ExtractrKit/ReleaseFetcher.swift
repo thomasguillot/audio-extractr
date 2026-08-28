@@ -25,11 +25,9 @@ public struct ReleaseFetcher: Sendable {
     )
 
     private let repoSlug: String
-    private let session: URLSession
 
-    public init(repoSlug: String, session: URLSession = .shared) {
+    public init(repoSlug: String) {
         self.repoSlug = repoSlug
-        self.session = session
     }
 
     public func fetchLatest() async throws -> GitHubRelease {
@@ -74,8 +72,7 @@ public struct ReleaseFetcher: Sendable {
         request.setValue("application/vnd.github+json", forHTTPHeaderField: "Accept")
 
         do {
-            let data = try await HTTPGuard.data(
-                for: request, session: session, maxBytes: Self.maxBytes)
+            let data = try await HTTPGuard.data(for: request, maxBytes: Self.maxBytes)
             return try JSONDecoder().decode(T.self, from: data)
         } catch let failure as HTTPGuard.Failure {
             throw FetchError(failure)

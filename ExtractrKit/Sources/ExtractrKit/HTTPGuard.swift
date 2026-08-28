@@ -15,6 +15,9 @@ public final class HTTPGuard: NSObject, URLSessionDataDelegate, @unchecked Senda
     private let maxBytes: Int
     private let lock = NSLock()
     private var _failure: Failure?
+    private var _body = Data()
+    private var _continuation: CheckedContinuation<Data, Error>?
+    private var _finished = false
 
     public init(maxBytes: Int) {
         self.maxBytes = maxBytes
@@ -62,21 +65,61 @@ public final class HTTPGuard: NSObject, URLSessionDataDelegate, @unchecked Senda
         "The update server returned an unexpected response (status \(code))."
     }
 
+    /// The cap that actually bounds memory. `expectedContentLength` is the declared, still
+    /// compressed length, and URLSession inflates transparently, so a small gzip can arrive
+    /// as an arbitrarily large body.
+    public func urlSession(
+        _ session: URLSession, dataTask: URLSessionDataTask, didReceive data: Data
+    ) {
+        let overCap: Bool = lock.withLock {
+            _body.append(data)
+            return _body.count > maxBytes
+        }
+        guard overCap else { return }
+        record(.tooLarge)
+        dataTask.cancel()
+    }
+
+    public func urlSession(
+        _ session: URLSession, task: URLSessionTask, didCompleteWithError error: Error?
+    ) {
+        if let failure { return finish(.failure(failure)) }
+        if let error { return finish(.failure(error)) }
+        finish(.success(lock.withLock { _body }))
+    }
+
+    /// Resumes once: a cancelled task reports through didCompleteWithError as well.
+    private func finish(_ result: Result<Data, Error>) {
+        let continuation: CheckedContinuation<Data, Error>? = lock.withLock {
+            guard !_finished else { return nil }
+            _finished = true
+            defer { _continuation = nil }
+            return _continuation
+        }
+        guard let continuation else { return }
+        switch result {
+        case let .success(data): continuation.resume(returning: data)
+        case let .failure(error): continuation.resume(throwing: error)
+        }
+    }
+
     /// Fetches `request` under these rules. Throws `Failure` rather than the transport error
     /// whenever a rule is what stopped the request.
-    public static func data(for request: URLRequest, session: URLSession, maxBytes: Int) async throws
-        -> Data
-    {
+    ///
+    /// The session is created here rather than injected: the byte cap needs per-chunk
+    /// delegate callbacks, which only a session-level delegate receives, and URLSession.shared
+    /// cannot take one at all.
+    public static func data(
+        for request: URLRequest, configuration: URLSessionConfiguration = .ephemeral,
+        maxBytes: Int
+    ) async throws -> Data {
         let guardDelegate = HTTPGuard(maxBytes: maxBytes)
-        let data: Data
-        do {
-            (data, _) = try await session.data(for: request, delegate: guardDelegate)
-        } catch {
-            if let failure = guardDelegate.failure { throw failure }
-            throw error
+        let session = URLSession(
+            configuration: configuration, delegate: guardDelegate, delegateQueue: nil)
+        defer { session.finishTasksAndInvalidate() }
+        return try await withCheckedThrowingContinuation { continuation in
+            guardDelegate.lock.withLock { guardDelegate._continuation = continuation }
+            session.dataTask(with: request).resume()
         }
-        if let failure = guardDelegate.failure { throw failure }
-        guard data.count <= maxBytes else { throw Failure.tooLarge }
-        return data
     }
 }
