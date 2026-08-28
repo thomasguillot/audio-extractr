@@ -12,9 +12,15 @@ public struct ToolLocator: Sendable {
     }
 
     public func ytDlp(fileManager: FileManager = .default) -> URL {
+        let bundled = bundledBinDir.appendingPathComponent("yt-dlp")
         let updated = updatedBinDir.appendingPathComponent("yt-dlp")
-        if fileManager.isExecutableFile(atPath: updated.path) { return updated }
-        return bundledBinDir.appendingPathComponent("yt-dlp")
+        guard fileManager.isExecutableFile(atPath: updated.path) else { return bundled }
+        // An app update can ship a newer seed than the copy the user self-updated to
+        // earlier, and the updated one would otherwise shadow it for good.
+        guard let bundledTag = TagFile.read(bundledYtDlpTagFile),
+            let updatedTag = TagFile.read(updatedYtDlpTagFile)
+        else { return updated }
+        return YtDlpUpdater.isUpgrade(from: bundledTag, to: updatedTag) ? updated : bundled
     }
 
     public func ffmpeg() -> URL {
@@ -25,5 +31,17 @@ public struct ToolLocator: Sendable {
 
     public var bundledYtDlpTagFile: URL {
         bundledBinDir.appendingPathComponent("yt-dlp.tag")
+    }
+
+    public var updatedYtDlpTagFile: URL {
+        updatedBinDir.appendingPathComponent("yt-dlp.tag")
+    }
+}
+
+enum TagFile {
+    static func read(_ url: URL?) -> String? {
+        guard let url, let raw = try? String(contentsOf: url, encoding: .utf8) else { return nil }
+        let tag = raw.trimmingCharacters(in: .whitespacesAndNewlines)
+        return tag.isEmpty ? nil : tag
     }
 }

@@ -41,6 +41,26 @@ import Testing
             try await runner.run(URL(fileURLWithPath: "/no/such/tool"), arguments: [])
         }
     }
+    /// `onCancel` can run before or during `run()`, when the process is not yet running.
+    /// A cancel that lands there must still stop the child from starting, or the task
+    /// reports cancelled while yt-dlp or ffmpeg carries on to completion.
+    @Test(.timeLimit(.minutes(1)))
+    func cancelBeforeLaunchNeverStartsTheChild() async throws {
+        let marker = FileManager.default.temporaryDirectory
+            .appendingPathComponent("processrunner-cancel-\(UUID().uuidString)")
+        let gate = Gate()
+        let task = Task {
+            await gate.wait()
+            return try await runner.run(
+                URL(fileURLWithPath: "/usr/bin/touch"), arguments: [marker.path])
+        }
+        task.cancel()
+        await gate.open()
+
+        await #expect(throws: CancellationError.self) { _ = try await task.value }
+        #expect(!FileManager.default.fileExists(atPath: marker.path))
+        try? FileManager.default.removeItem(at: marker)
+    }
     @Test func cancellationTerminatesQuickly() async throws {
         let start = ContinuousClock.now
         let task = Task {
@@ -58,4 +78,22 @@ final class LineCollector: @unchecked Sendable {
     private var _lines: [String] = []
     var lines: [String] { lock.withLock { _lines } }
     func append(_ line: String) { lock.withLock { _lines.append(line) } }
+}
+
+/// Cancellation-transparent gate: `Task.sleep` would throw on an already-cancelled
+/// task, so the body under test would never be reached.
+actor Gate {
+    private var continuation: CheckedContinuation<Void, Never>?
+    private var opened = false
+
+    func wait() async {
+        if opened { return }
+        await withCheckedContinuation { continuation = $0 }
+    }
+
+    func open() {
+        opened = true
+        continuation?.resume()
+        continuation = nil
+    }
 }

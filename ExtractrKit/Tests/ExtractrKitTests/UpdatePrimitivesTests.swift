@@ -181,6 +181,19 @@ import Testing
 }
 
 @Suite struct ReleasesEndpointTests {
+    /// URLSession resolves dot-segments, so a slug carrying them would silently target a
+    /// different api.github.com endpoint than the one being built.
+    @Test(arguments: [
+        "", "owner", "owner/", "/repo", "a//b", "a/b/c",
+        "a/b/../../gists", "owner/repo/../../../", "../..",
+    ])
+    func rejectsMalformedRepoSlug(_ slug: String) {
+        #expect(ReleaseFetcher.releasesEndpoint(repoSlug: slug, perPage: 30) == nil)
+    }
+    @Test(arguments: ["thomasguillot/audio-extractr", "yt-dlp/yt-dlp", "a_b.c/d-e.f"])
+    func acceptsWellFormedRepoSlug(_ slug: String) {
+        #expect(ReleaseFetcher.releasesEndpoint(repoSlug: slug, perPage: 30) != nil)
+    }
     @Test func buildsListEndpoint() throws {
         let url = try #require(ReleaseFetcher.releasesEndpoint(repoSlug: "a/b", perPage: 30))
         #expect(url.absoluteString == "https://api.github.com/repos/a/b/releases?per_page=30")

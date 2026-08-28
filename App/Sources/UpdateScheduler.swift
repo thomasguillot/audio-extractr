@@ -11,8 +11,9 @@ final class UpdateScheduler {
     init(controller: UpdateController) { self.controller = controller }
 
     func start() {
-        timer?.invalidate()
-        timer = nil
+        // Called from the window's onAppear, so reopening the window must not restart the
+        // countdown; the launch delay is once per session, not once per window.
+        guard timer == nil else { return }
         guard prefs.autoCheckForUpdates else { return }
         let t = Timer(timeInterval: Self.launchDelay, repeats: false) { [weak self] _ in
             Task { @MainActor [weak self] in

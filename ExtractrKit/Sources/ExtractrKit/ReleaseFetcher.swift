@@ -21,7 +21,7 @@ public struct ReleaseFetcher: Sendable {
 
     /// `URL(string:)` escapes a malformed slug rather than failing, so the slug is vetted first.
     private static let slugCharacters = CharacterSet(
-        charactersIn: "ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789-._/"
+        charactersIn: "ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789-._"
     )
 
     private let repoSlug: String
@@ -56,8 +56,15 @@ public struct ReleaseFetcher: Sendable {
             "https://api.github.com/repos/\(repoSlug)/releases?per_page=\(clamped)")
     }
 
+    /// Exactly `owner/repo`. URLSession resolves dot-segments while building the request,
+    /// so a slug carrying them would reach a different endpoint than the one composed here.
     private static func isValidSlug(_ slug: String) -> Bool {
-        slug.unicodeScalars.allSatisfy(slugCharacters.contains)
+        let parts = slug.split(separator: "/", omittingEmptySubsequences: false)
+        guard parts.count == 2 else { return false }
+        return parts.allSatisfy { part in
+            !part.isEmpty && part != "." && part != ".."
+                && part.unicodeScalars.allSatisfy(slugCharacters.contains)
+        }
     }
 
     private func get<T: Decodable>(_ type: T.Type, from url: URL) async throws -> T {

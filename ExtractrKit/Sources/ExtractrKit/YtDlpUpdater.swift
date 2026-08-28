@@ -86,15 +86,13 @@ public struct YtDlpUpdater: Sendable {
         self.session = session
     }
 
+    /// The newer of the self-updated and bundled tags, so an app update that ships a newer
+    /// seed is not treated as older than a yt-dlp the user updated before installing it.
     public func installedTag() -> String? {
-        let updated = binDir.appendingPathComponent("yt-dlp.tag")
-        if let tag = try? String(contentsOf: updated, encoding: .utf8) {
-            return tag.trimmingCharacters(in: .whitespacesAndNewlines)
-        }
-        guard let bundledTagFile,
-            let tag = try? String(contentsOf: bundledTagFile, encoding: .utf8)
-        else { return nil }
-        return tag.trimmingCharacters(in: .whitespacesAndNewlines)
+        let updated = TagFile.read(binDir.appendingPathComponent("yt-dlp.tag"))
+        guard let bundled = TagFile.read(bundledTagFile) else { return updated }
+        guard let updated else { return bundled }
+        return Self.isUpgrade(from: bundled, to: updated) ? updated : bundled
     }
 
     /// Returns the newly installed tag, or nil when already current. A failed

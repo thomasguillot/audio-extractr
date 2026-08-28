@@ -86,8 +86,10 @@ struct UpdateInstaller {
         process.standardOutput = pipe
         process.standardError = pipe
         try process.run()
-        process.waitUntilExit()
+        // Draining before the wait, not after: a child that outgrows the pipe buffer blocks
+        // on write while we block on exit, and neither side moves again.
         let output = String(decoding: pipe.fileHandleForReading.readDataToEndOfFile(), as: UTF8.self)
+        process.waitUntilExit()
         guard process.terminationStatus == 0 else {
             throw InstallError.commandFailed("\((path as NSString).lastPathComponent) failed: \(output)")
         }
