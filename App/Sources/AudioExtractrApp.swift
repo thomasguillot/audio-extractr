@@ -37,7 +37,7 @@ struct AudioExtractrApp: App {
             CommandGroup(replacing: .help) {
                 Link(
                     "Audio Extractr Website",
-                    destination: URL(string: "https://thomasguillot.github.io/audio-extractr/")!)
+                    destination: URL(string: "https://audio-extractr.view.fast/")!)
             }
         }
 

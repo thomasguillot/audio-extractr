@@ -1,7 +1,6 @@
 import { defineConfig } from "astro/config";
 
 export default defineConfig({
-  site: "https://thomasguillot.github.io",
-  base: "/audio-extractr",
+  site: "https://audio-extractr.view.fast",
   output: "static",
 });
