@@ -45,10 +45,17 @@ private final class ProcessBox: @unchecked Sendable {
 public struct ProcessRunner: Sendable {
     public init() {}
 
+    /// Enough for yt-dlp's -J of a long video; the head is kept.
+    public static let defaultStdoutLimit = 32 << 20
+    /// Only the tail of stderr is ever shown; the probe asks for more to keep ffmpeg's header.
+    public static let defaultStderrLimit = 64 << 10
+
     /// Chunked rather than `FileHandle.bytes.lines`: the line iterator stalls once a single
     /// line outgrows its internal buffer, which stops draining the pipe and deadlocks the
     /// child mid-write — yt-dlp -J emits its whole JSON as one multi-hundred-KB line.
-    private func drainTask(_ pipe: Pipe, onLine: (@Sendable (String) -> Void)?) -> Task<String, Never> {
+    private func drainTask(
+        _ pipe: Pipe, limit: Int, keepTail: Bool, onLine: (@Sendable (String) -> Void)?
+    ) -> Task<String, Never> {
         Task.detached {
             let handle = pipe.fileHandleForReading
             let chunks = AsyncStream<Data> { continuation in
@@ -67,7 +74,12 @@ public struct ProcessRunner: Sendable {
             var collected = Data()
             var pending = Data()
             for await chunk in chunks {
-                collected.append(chunk)
+                if keepTail {
+                    collected.append(chunk)
+                    if collected.count > limit * 2 { collected = collected.suffix(limit) }
+                } else if collected.count < limit {
+                    collected.append(chunk.prefix(limit - collected.count))
+                }
                 guard onLine != nil else { continue }
                 pending.append(chunk)
                 while let newline = pending.firstIndex(of: 0x0A) {
@@ -75,10 +87,12 @@ public struct ProcessRunner: Sendable {
                     pending.removeSubrange(pending.startIndex...newline)
                     onLine?(Self.lineString(line))
                 }
+                if pending.count > limit { pending.removeAll() }
             }
             if let onLine, !pending.isEmpty {
                 onLine(Self.lineString(pending))
             }
+            if keepTail { collected = collected.suffix(limit) }
             return String(decoding: collected, as: UTF8.self)
         }
     }
@@ -92,6 +106,8 @@ public struct ProcessRunner: Sendable {
     public func run(
         _ executable: URL,
         arguments: [String],
+        stdoutLimit: Int = defaultStdoutLimit,
+        stderrLimit: Int = defaultStderrLimit,
         onStdoutLine: (@Sendable (String) -> Void)? = nil
     ) async throws -> ProcessOutput {
         let box = ProcessBox()
@@ -102,8 +118,9 @@ public struct ProcessRunner: Sendable {
         box.process.standardError = box.stderr
 
         // Readers must drain concurrently with the wait or a full pipe deadlocks the child.
-        let outTask = drainTask(box.stdout, onLine: onStdoutLine)
-        let errTask = drainTask(box.stderr, onLine: nil)
+        let outTask = drainTask(
+            box.stdout, limit: stdoutLimit, keepTail: false, onLine: onStdoutLine)
+        let errTask = drainTask(box.stderr, limit: stderrLimit, keepTail: true, onLine: nil)
 
         do {
             let exitCode: Int32 = try await withTaskCancellationHandler {

@@ -9,6 +9,9 @@ public struct ProbeService: Sendable {
         self.runner = runner
     }
 
+    /// The whole of `ffmpeg -i`'s stderr is the header the parser reads, head first.
+    static let probeStderrLimit = 4 << 20
+
     public func probe(_ input: MediaInput) async throws -> MediaProbe {
         switch input {
         case let .remote(url):
@@ -23,7 +26,8 @@ public struct ProbeService: Sendable {
             }
             // ffmpeg -i with no output exits non-zero by design; the Duration line still prints.
             let result = try await runner.run(
-                tools.ffmpeg(), arguments: FFmpegCommand.probeArguments(file: url))
+                tools.ffmpeg(), arguments: FFmpegCommand.probeArguments(file: url),
+                stderrLimit: Self.probeStderrLimit)
             let title = url.deletingPathExtension().lastPathComponent
             guard
                 let probe = FFmpegProbeParser.parse(

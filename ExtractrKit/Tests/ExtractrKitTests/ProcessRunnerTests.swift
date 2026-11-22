@@ -36,6 +36,30 @@ import Testing
         #expect(result.exitCode == 0)
         #expect(result.stdout.count == 600_001)
     }
+    /// Only the tail of stderr is ever shown, so a child flooding it cannot grow memory.
+    @Test(.timeLimit(.minutes(1))) func stderrKeepsOnlyTheTail() async throws {
+        let script = "{ head -c 300000 /dev/zero | tr '\\0' 'a'; echo; echo END; } 1>&2"
+        let result = try await runner.run(URL(fileURLWithPath: "/bin/sh"), arguments: ["-c", script])
+        #expect(result.stderr.utf8.count == ProcessRunner.defaultStderrLimit)
+        #expect(result.stderr.hasSuffix("a\nEND\n"))
+        let small = try await runner.run(
+            URL(fileURLWithPath: "/bin/sh"), arguments: ["-c", script], stderrLimit: 10)
+        #expect(small.stderr == "aaaaa\nEND\n")
+    }
+    @Test(.timeLimit(.minutes(1))) func stdoutStopsAtItsCapButLinesStillStream() async throws {
+        let collected = LineCollector()
+        let result = try await runner.run(
+            URL(fileURLWithPath: "/bin/sh"),
+            arguments: ["-c", "head -c 5000 /dev/zero | tr '\\0' 'a'; echo; echo last"],
+            stdoutLimit: 100, onStdoutLine: { collected.append($0) })
+        #expect(result.exitCode == 0)
+        #expect(result.stdout == String(repeating: "a", count: 100))
+        #expect(collected.lines.last == "last")
+        #expect(ProcessRunner.defaultStdoutLimit == 32 << 20)
+    }
+    @Test func theLocalProbeKeepsTheWholeHeader() {
+        #expect(ProbeService.probeStderrLimit == 4 << 20)
+    }
     @Test func missingExecutableThrows() async {
         await #expect(throws: ProcessRunnerError.self) {
             try await runner.run(URL(fileURLWithPath: "/no/such/tool"), arguments: [])
