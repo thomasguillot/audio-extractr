@@ -11,7 +11,7 @@ public struct TrimSelection: Equatable, Sendable {
     public static let minimumLength: Double = 1
 
     public init(duration: Double) {
-        self.duration = max(duration, 0)
+        self.duration = duration.isFinite ? max(duration, 0) : 0
         self.start = 0
         self.end = self.duration
     }

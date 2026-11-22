@@ -17,6 +17,13 @@ import Testing
         let probe = YtDlpProbeParser.parse(Data(#"{"duration": 120}"#.utf8))
         #expect(probe?.duration == 120)
     }
+    @Test func absurdDurationsAreDropped() {
+        for duration in ["1e300", "-5", "604801"] {
+            let probe = YtDlpProbeParser.parse(Data(#"{"title": "x", "duration": \#(duration)}"#.utf8))
+            #expect(probe?.title == "x")
+            #expect(probe?.duration == nil, "\(duration)")
+        }
+    }
     @Test func invalidJSONIsNil() {
         #expect(YtDlpProbeParser.parse(Data("not json".utf8)) == nil)
     }

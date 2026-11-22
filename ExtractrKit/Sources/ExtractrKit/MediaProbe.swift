@@ -18,6 +18,7 @@ public enum YtDlpProbeParser {
 
     public static func parse(_ data: Data) -> MediaProbe? {
         guard let payload = try? JSONDecoder().decode(Payload.self, from: data) else { return nil }
-        return MediaProbe(title: payload.title, duration: payload.duration)
+        return MediaProbe(
+            title: payload.title, duration: payload.duration.flatMap(FFmpegDurationParser.bounded))
     }
 }

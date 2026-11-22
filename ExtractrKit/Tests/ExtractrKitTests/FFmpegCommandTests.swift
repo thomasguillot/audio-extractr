@@ -149,5 +149,30 @@ func expectEveryInputIsLimited(_ args: [String], sourceLocation: SourceLocation 
     }
     @Test func missingDurationIsNil() {
         #expect(FFmpegDurationParser.duration(fromStderr: "no duration here") == nil)
+        #expect(FFmpegDurationParser.duration(fromStderr: "  Duration: N/A, start: 0.000000") == nil)
+    }
+    /// A title tag is printed as a value line, deeper than the container's own header.
+    @Test func aTagCannotSetTheDuration() {
+        let stderr = """
+            Input #0, mov,mp4,m4a,3gp,3g2,mj2, from 'hostile.m4a':
+              Metadata:
+                title           : Duration: 99999999999999999:00:00.00, x\u{2028}  Duration: 99:00:00.00
+              Duration: 00:00:02.00, start: 0.000000, bitrate: 75 kb/s
+            """
+        #expect(FFmpegDurationParser.duration(fromStderr: stderr) == 2)
+    }
+    @Test func onlyTheTwoSpaceHeaderCounts() {
+        #expect(FFmpegDurationParser.duration(fromStderr: "Duration: 00:00:05.00\n") == nil)
+        #expect(FFmpegDurationParser.duration(fromStderr: "   Duration: 00:00:05.00\n") == nil)
+        #expect(FFmpegDurationParser.duration(fromStderr: "x  Duration: 00:00:05.00\n") == nil)
+    }
+    @Test func absurdDurationsAreDropped() {
+        for header in [
+            "99999999999999999:00:00.00", String(repeating: "9", count: 400) + ":00:00.00",
+            "169:00:00.00",
+        ] {
+            #expect(FFmpegDurationParser.duration(fromStderr: "  Duration: \(header), start: 0\n") == nil)
+        }
+        #expect(FFmpegDurationParser.duration(fromStderr: "  Duration: 167:59:59.00\n") == 604_799)
     }
 }

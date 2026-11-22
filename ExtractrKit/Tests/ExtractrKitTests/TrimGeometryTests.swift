@@ -14,6 +14,15 @@ import Testing
         #expect(selection.duration == 0)
         #expect(selection.end == 0)
     }
+    @Test func aNonFiniteDurationIsEmpty() {
+        for duration in [Double.infinity, -.infinity, .nan] {
+            var selection = TrimSelection(duration: duration)
+            #expect(selection.duration == 0)
+            selection.moveStart(to: 5)
+            selection.moveEnd(to: .infinity)
+            #expect(selection.trimRange == TrimRange())
+        }
+    }
     @Test func handlesClampToClipAndEachOther() {
         var selection = TrimSelection(duration: 100)
         selection.moveStart(to: -10)

@@ -22,6 +22,13 @@ import Testing
         #expect(TimeCode.text(from: 90) == "1:30")
         #expect(TimeCode.text(from: 3723.4) == "1:02:03")
     }
+    @Test func formattingNeverTraps() {
+        #expect(TimeCode.text(from: .infinity) == "0:00")
+        #expect(TimeCode.text(from: -.infinity) == "0:00")
+        #expect(TimeCode.text(from: .nan) == "0:00")
+        #expect(TimeCode.text(from: -5) == "0:00")
+        #expect(!TimeCode.text(from: 3.6e20).isEmpty)
+    }
     @Test func hugeNumbersReturnNilInsteadOfTrapping() {
         #expect(TimeCode.seconds(from: "9999999999999999:00:00") == nil)
         #expect(TimeCode.seconds(from: String(Int.max)) == Int.max)

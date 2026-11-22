@@ -23,8 +23,9 @@ public enum TimeCode {
         return total
     }
 
+    /// Total: a non-finite or negative time reads as zero, and a huge one is clamped.
     public static func text(from seconds: Double) -> String {
-        let total = Int(seconds.rounded(.down))
+        let total = seconds.isFinite ? Int(min(max(seconds, 0), 1e15).rounded(.down)) : 0
         let h = total / 3600
         let m = (total % 3600) / 60
         let s = total % 60
