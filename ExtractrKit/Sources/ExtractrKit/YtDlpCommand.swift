@@ -14,7 +14,7 @@ public enum YtDlpCommand {
         [
             ignoreConfig, "-J",
             "--extractor-args", "youtube:player_client=android",
-            "--no-playlist", "--no-warnings", url.absoluteString,
+            "--no-playlist", "--flat-playlist", "--no-warnings", url.absoluteString,
         ]
     }
 

@@ -38,6 +38,10 @@ extension Error {
                 return "Converting to MP3 failed."
             case .outputMissing:
                 return "Converting finished but no MP3 was produced. Please try again."
+            case .liveStream:
+                return "Live streams can't be saved. Try again once the stream has ended."
+            case .playlist:
+                return "This link is a playlist. Paste a link to a single video or track instead."
             }
         }
         if let e = self as? TranscriptionError {

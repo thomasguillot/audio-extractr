@@ -12,6 +12,8 @@ public struct ProbeService: Sendable {
     /// The whole of `ffmpeg -i`'s stderr is the header the parser reads, head first.
     static let probeStderrLimit = 4 << 20
 
+    /// Throws `.liveStream` for a live or upcoming stream and `.playlist` for a link to a
+    /// playlist.
     public func probe(_ input: MediaInput) async throws -> MediaProbe {
         switch input {
         case let .remote(url):
@@ -20,6 +22,7 @@ public struct ProbeService: Sendable {
                 stop: YtDlpCommand.stop)
             guard result.exitCode == 0, let probe = YtDlpProbeParser.parse(Data(result.stdout.utf8))
             else { throw ExtractorError.probeFailed(detail: ExtractorError.tail(result.stderr)) }
+            try Self.check(probe)
             return probe
         case let .localFile(url):
             guard FileManager.default.fileExists(atPath: url.path) else {
@@ -36,5 +39,10 @@ public struct ProbeService: Sendable {
             else { throw ExtractorError.probeFailed(detail: ExtractorError.tail(result.stderr)) }
             return probe
         }
+    }
+
+    static func check(_ probe: MediaProbe) throws {
+        if probe.isPlaylist { throw ExtractorError.playlist }
+        if probe.isLive { throw ExtractorError.liveStream }
     }
 }

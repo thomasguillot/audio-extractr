@@ -3,12 +3,14 @@ public enum ExtractorError: Error, Equatable {
     case downloadFailed(detail: String)
     case conversionFailed(detail: String)
     case outputMissing
+    case liveStream
+    case playlist
 
     public var detail: String? {
         switch self {
         case let .probeFailed(detail), let .downloadFailed(detail), let .conversionFailed(detail):
             return detail.isEmpty ? nil : detail
-        case .outputMissing:
+        case .outputMissing, .liveStream, .playlist:
             return nil
         }
     }
