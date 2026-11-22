@@ -53,12 +53,26 @@ func expectEveryInputIsLimited(_ args: [String], sourceLocation: SourceLocation 
             input: input, output: output, trim: TrimRange(start: 10, end: 70), speed: 0.25)
         #expect(
             args == [
-                "-hide_banner", "-nostdin", "-ss", "10", "-t", "60",
+                "-hide_banner", "-nostdin", "-ss", "10.000", "-t", "60.000",
                 "-format_whitelist", demuxers, "-i", "/tmp/in.m4a",
                 "-vn", "-filter:a", "atempo=0.5,atempo=0.5", "-codec:a", "libmp3lame",
                 "-b:a", "192k", "-f", "mp3", "-progress", "pipe:1", "-nostats", "-y",
                 "/tmp/out.mp3",
             ])
+    }
+    /// The preview plays fractional handles, so the cut is written to the millisecond in
+    /// locale-free decimals; -ss/-t stay source seconds whatever the speed.
+    @Test func fractionalTrimIsCutToTheMillisecond() {
+        let args = FFmpegCommand.extractArguments(
+            input: input, output: output, trim: TrimRange(start: 10.4567, end: 12.75), speed: 1.5)
+        #expect(Array(args[2...5]) == ["-ss", "10.457", "-t", "2.293"])
+        #expect(args.contains("atempo=1.5"))
+    }
+    @Test func trimStartOnlyHasNoLimit() {
+        let args = FFmpegCommand.extractArguments(
+            input: input, output: output, trim: TrimRange(start: 5), speed: 1)
+        #expect(Array(args[2...3]) == ["-ss", "5.000"])
+        #expect(!args.contains("-t"))
     }
     @Test func defaultsOmitTrimAndFilter() {
         let args = FFmpegCommand.extractArguments(

@@ -35,5 +35,13 @@ import Testing
         #expect(TrimRange(start: 10, end: nil).clipLimitSeconds == nil)
         #expect(TrimRange(start: 10, end: nil).clipSeconds(mediaDuration: 100) == 90)
         #expect(TrimRange(start: nil, end: nil).clipSeconds(mediaDuration: nil) == nil)
+        #expect(TrimRange(start: 10.25, end: 12.75).clipLimitSeconds == 2.5)
+        #expect(TrimRange(start: 10.25, end: nil).clipSeconds(mediaDuration: 12) == 1.75)
+    }
+    @Test func fractionalBoundsValidate() throws {
+        try TrimRange(start: 0.5, end: 1.25).validate(mediaDuration: 2)
+        #expect(throws: TrimRange.ValidationError.startAfterEnd) {
+            try TrimRange(start: 1.5, end: 1.25).validate(mediaDuration: 2)
+        }
     }
 }

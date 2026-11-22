@@ -22,6 +22,13 @@ import Testing
         #expect(TimeCode.text(from: 90) == "1:30")
         #expect(TimeCode.text(from: 3723.4) == "1:02:03")
     }
+    /// A field still showing what a dragged handle displays keeps the handle's fraction.
+    @Test func unchangedTextKeepsTheCurrentTime() {
+        #expect(TimeCode.seconds(from: "0:10", keeping: 10.6) == 10.6)
+        #expect(TimeCode.seconds(from: " 0:10 ", keeping: 10.6) == 10.6)
+        #expect(TimeCode.seconds(from: "0:11", keeping: 10.6) == 11)
+        #expect(TimeCode.seconds(from: "nope", keeping: 10.6) == nil)
+    }
     @Test func formattingNeverTraps() {
         #expect(TimeCode.text(from: .infinity) == "0:00")
         #expect(TimeCode.text(from: -.infinity) == "0:00")

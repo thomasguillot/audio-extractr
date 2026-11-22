@@ -23,6 +23,14 @@ public enum TimeCode {
         return total
     }
 
+    /// `current` when the text still reads as it, so committing a field that only shows a
+    /// dragged handle keeps the handle's fraction; otherwise the typed time.
+    public static func seconds(from text: String, keeping current: Double) -> Double? {
+        let trimmed = text.trimmingCharacters(in: .whitespaces)
+        if trimmed == self.text(from: current) { return current }
+        return seconds(from: trimmed).map(Double.init)
+    }
+
     /// Total: a non-finite or negative time reads as zero, and a huge one is clamped.
     public static func text(from seconds: Double) -> String {
         let total = seconds.isFinite ? Int(min(max(seconds, 0), 1e15).rounded(.down)) : 0

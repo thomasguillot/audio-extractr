@@ -102,7 +102,7 @@ final class AppModel {
             errorMessage = Self.endTimeFormat
             return nil
         }
-        let trim = TrimRange(start: start, end: end)
+        let trim = TrimRange(start: start.map(Double.init), end: end.map(Double.init))
         do {
             try trim.validate(mediaDuration: probe?.duration)
         } catch {
@@ -384,23 +384,28 @@ extension AppModel {
     }
 
     func applyStartText() {
-        guard selection != nil else { return }
-        apply(startText, whenEmpty: 0, message: Self.startTimeFormat, move: moveStart)
+        guard let current = selection else { return }
+        apply(
+            startText, current: current.start, whenEmpty: 0, message: Self.startTimeFormat,
+            move: moveStart)
     }
 
     func applyEndText() {
         guard let current = selection else { return }
-        apply(endText, whenEmpty: current.duration, message: Self.endTimeFormat, move: moveEnd)
+        apply(
+            endText, current: current.end, whenEmpty: current.duration,
+            message: Self.endTimeFormat, move: moveEnd)
     }
 
     private func apply(
-        _ text: String, whenEmpty: Double, message: String, move: (Double) -> Void
+        _ text: String, current: Double, whenEmpty: Double, message: String,
+        move: (Double) -> Void
     ) {
         let trimmed = text.trimmingCharacters(in: .whitespaces)
         if trimmed.isEmpty {
             move(whenEmpty)
-        } else if let seconds = TimeCode.seconds(from: trimmed) {
-            move(Double(seconds))
+        } else if let seconds = TimeCode.seconds(from: trimmed, keeping: current) {
+            move(seconds)
         } else {
             errorMessage = message
             errorDetail = nil

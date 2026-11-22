@@ -2,7 +2,7 @@ import Foundation
 
 public enum FFmpegDurationParser {
     /// Longer than this is a forged header, not a recording.
-    public static let maximumSeconds = Double(TrimRange.maxSeconds)
+    public static let maximumSeconds = TrimRange.maxSeconds
 
     /// Read only from the container's own `  Duration: …` line, exactly two spaces in: tag
     /// values print deeper, so a title cannot stand in for it.

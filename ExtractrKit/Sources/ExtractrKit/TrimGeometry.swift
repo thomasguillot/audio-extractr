@@ -24,12 +24,10 @@ public struct TrimSelection: Equatable, Sendable {
         end = max(min(time, duration), min(start + Self.minimumLength, duration))
     }
 
-    /// Whole-second bounds for the ffmpeg pipeline; untouched handles stay open
-    /// so an untrimmed extract needs no -ss/-t at all.
+    /// The bounds the preview plays, fraction included; untouched handles stay open so an
+    /// untrimmed extract needs no -ss/-t at all.
     public var trimRange: TrimRange {
-        TrimRange(
-            start: start > 0 ? Int(start.rounded(.down)) : nil,
-            end: end < duration ? Int(end.rounded(.down)) : nil)
+        TrimRange(start: start > 0 ? start : nil, end: end < duration ? end : nil)
     }
 }
 

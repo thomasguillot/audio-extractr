@@ -24,8 +24,8 @@ public enum FFmpegCommand {
         -> [String]
     {
         var args = ["-hide_banner", "-nostdin"]
-        if let start = trim.start { args += ["-ss", String(start)] }
-        if let limit = trim.clipLimitSeconds { args += ["-t", String(limit)] }
+        if let start = trim.start { args += ["-ss", String(format: "%.3f", start)] }
+        if let limit = trim.clipLimitSeconds { args += ["-t", String(format: "%.3f", limit)] }
         args += inputArguments(input) + ["-vn"]
         if let filter = AtempoChain.filter(for: speed) { args += ["-filter:a", filter] }
         args += [
