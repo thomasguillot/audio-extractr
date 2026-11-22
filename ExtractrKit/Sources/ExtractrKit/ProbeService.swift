@@ -25,9 +25,11 @@ public struct ProbeService: Sendable {
             let result = try await runner.run(
                 tools.ffmpeg(), arguments: FFmpegCommand.probeArguments(file: url))
             let title = url.deletingPathExtension().lastPathComponent
-            return MediaProbe(
-                title: title.isEmpty ? nil : title,
-                duration: FFmpegDurationParser.duration(fromStderr: result.stderr))
+            guard
+                let probe = FFmpegProbeParser.parse(
+                    stderr: result.stderr, title: title.isEmpty ? nil : title)
+            else { throw ExtractorError.probeFailed(detail: ExtractorError.tail(result.stderr)) }
+            return probe
         }
     }
 }

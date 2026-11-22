@@ -25,6 +25,16 @@ public enum YtDlpCommand {
             "--no-playlist", "--no-warnings", "--newline",
             "--ffmpeg-location", ffmpegDir,
             "-o", outputTemplate,
-        ]
+        ] + postprocessorInputGuards
+    }
+
+    /// The fixups yt-dlp may run on a single-format download open it through ffmpeg too, so
+    /// they get the same demuxer list. yt-dlp reads a bare `ffmpeg_i` key for no
+    /// postprocessor, so each one is named.
+    private static let postprocessorInputGuards = [
+        "FixupM4a", "FixupM3u8", "FixupTimestamp", "FixupDuration", "FixupDuplicateMoov",
+        "FixupStretched",
+    ].flatMap { name in
+        ["--postprocessor-args", "\(name)+ffmpeg_i:" + FFmpegCommand.demuxerLimit.joined(separator: " ")]
     }
 }

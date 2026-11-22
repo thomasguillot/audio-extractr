@@ -44,6 +44,12 @@ import Testing
                 "--no-playlist", "--no-warnings", "--newline",
                 "--ffmpeg-location", "/app/bin",
                 "-o", "/tmp/job/download.%(ext)s",
+                "--postprocessor-args", "FixupM4a+ffmpeg_i:-format_whitelist \(demuxers)",
+                "--postprocessor-args", "FixupM3u8+ffmpeg_i:-format_whitelist \(demuxers)",
+                "--postprocessor-args", "FixupTimestamp+ffmpeg_i:-format_whitelist \(demuxers)",
+                "--postprocessor-args", "FixupDuration+ffmpeg_i:-format_whitelist \(demuxers)",
+                "--postprocessor-args", "FixupDuplicateMoov+ffmpeg_i:-format_whitelist \(demuxers)",
+                "--postprocessor-args", "FixupStretched+ffmpeg_i:-format_whitelist \(demuxers)",
             ])
     }
 }
