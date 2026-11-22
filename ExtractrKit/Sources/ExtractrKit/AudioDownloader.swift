@@ -18,6 +18,7 @@ public struct AudioDownloader: Sendable {
             tools.ytDlp(),
             arguments: YtDlpCommand.downloadArguments(
                 url: url, outputTemplate: template, ffmpegDir: tools.ffmpegDir),
+            stop: YtDlpCommand.stop,
             onStdoutLine: { line in
                 if let fraction = YtDlpProgressParser.fraction(line: line) {
                     onProgress(fraction)

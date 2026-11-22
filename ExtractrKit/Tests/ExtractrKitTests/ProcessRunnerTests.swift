@@ -85,6 +85,80 @@ import Testing
         #expect(!FileManager.default.fileExists(atPath: marker.path))
         try? FileManager.default.removeItem(at: marker)
     }
+    private func marker() -> URL {
+        FileManager.default.temporaryDirectory
+            .appendingPathComponent("processrunner-\(UUID().uuidString)")
+    }
+
+    private func waitUntil(_ condition: () -> Bool) async throws {
+        let deadline = ContinuousClock.now + .seconds(10)
+        while !condition(), ContinuousClock.now < deadline {
+            try await Task.sleep(for: .milliseconds(20))
+        }
+    }
+
+    /// yt-dlp stops its own ffmpeg fixup on SIGINT; SIGTERM kills it outright and orphans it.
+    @Test(.timeLimit(.minutes(1))) func interruptibleCancelSendsSIGINTFirst() async throws {
+        let file = marker()
+        let registry = ProcessRegistry()
+        let runner = ProcessRunner(registry: registry)
+        let task = Task {
+            try await runner.run(
+                URL(fileURLWithPath: "/bin/sh"),
+                arguments: ["-c", "trap 'touch \(file.path); exit 3' INT; sleep 5 >/dev/null 2>&1 & wait"],
+                stop: .interrupt(grace: .seconds(5)))
+        }
+        try await waitUntil { registry.count == 1 }
+        try await Task.sleep(for: .milliseconds(100))
+        task.cancel()
+        _ = try? await task.value
+        #expect(FileManager.default.fileExists(atPath: file.path))
+        try? FileManager.default.removeItem(at: file)
+    }
+
+    @Test(.timeLimit(.minutes(1))) func aChildIgnoringSIGINTIsTerminatedAfterTheGrace() async throws {
+        let registry = ProcessRegistry()
+        let runner = ProcessRunner(registry: registry)
+        let start = ContinuousClock.now
+        let task = Task {
+            try await runner.run(
+                URL(fileURLWithPath: "/bin/sh"),
+                arguments: ["-c", "trap '' INT; sleep 5 >/dev/null 2>&1 & wait"],
+                stop: .interrupt(grace: .milliseconds(300)))
+        }
+        try await waitUntil { registry.count == 1 }
+        task.cancel()
+        _ = try? await task.value
+        #expect(ContinuousClock.now - start < .seconds(4))
+        #expect(registry.count == 0)
+    }
+
+    /// The app's quit path: every live child is stopped before the app exits.
+    @Test(.timeLimit(.minutes(1))) func terminateAllStopsEveryLiveChild() async throws {
+        let file = marker()
+        let registry = ProcessRegistry()
+        let runner = ProcessRunner(registry: registry)
+        let plain = Task {
+            try await runner.run(URL(fileURLWithPath: "/bin/sleep"), arguments: ["30"])
+        }
+        let interruptible = Task {
+            try await runner.run(
+                URL(fileURLWithPath: "/bin/sh"),
+                arguments: ["-c", "trap 'touch \(file.path); exit 3' INT; sleep 5 >/dev/null 2>&1 & wait"],
+                stop: .interrupt(grace: .seconds(5)))
+        }
+        try await waitUntil { registry.count == 2 }
+        try await Task.sleep(for: .milliseconds(100))
+        let start = ContinuousClock.now
+        registry.terminateAll(grace: .seconds(2))
+        #expect(ContinuousClock.now - start < .seconds(3))
+        #expect(try await plain.value.exitCode != 0)
+        #expect(try await interruptible.value.exitCode == 3)
+        #expect(FileManager.default.fileExists(atPath: file.path))
+        #expect(registry.count == 0)
+        try? FileManager.default.removeItem(at: file)
+    }
+
     @Test func cancellationTerminatesQuickly() async throws {
         let start = ContinuousClock.now
         let task = Task {

@@ -40,6 +40,13 @@ import Testing
                 "--no-playlist", "--no-warnings", "https://example.com/watch?v=1",
             ])
     }
+    @Test func ytDlpIsInterruptedBeforeItIsTerminated() {
+        guard case let .interrupt(grace) = YtDlpCommand.stop else {
+            Issue.record("yt-dlp must get SIGINT first")
+            return
+        }
+        #expect(grace == .seconds(3))
+    }
     @Test func downloadArguments() {
         let args = YtDlpCommand.downloadArguments(
             url: url, outputTemplate: "/tmp/job/download.%(ext)s", ffmpegDir: "/app/bin")

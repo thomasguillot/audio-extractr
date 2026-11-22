@@ -7,6 +7,9 @@ public enum YtDlpCommand {
     /// arguments are not the ones built here — an --exec line there runs on every extraction.
     private static let ignoreConfig = "--ignore-config"
 
+    /// SIGINT lets yt-dlp stop the ffmpeg running its fixup; SIGTERM would orphan it.
+    public static let stop = ProcessStop.interrupt(grace: .seconds(3))
+
     public static func probeArguments(url: URL) -> [String] {
         [
             ignoreConfig, "-J",

@@ -16,7 +16,8 @@ public struct ProbeService: Sendable {
         switch input {
         case let .remote(url):
             let result = try await runner.run(
-                tools.ytDlp(), arguments: YtDlpCommand.probeArguments(url: url))
+                tools.ytDlp(), arguments: YtDlpCommand.probeArguments(url: url),
+                stop: YtDlpCommand.stop)
             guard result.exitCode == 0, let probe = YtDlpProbeParser.parse(Data(result.stdout.utf8))
             else { throw ExtractorError.probeFailed(detail: ExtractorError.tail(result.stderr)) }
             return probe
