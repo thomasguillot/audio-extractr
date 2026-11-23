@@ -1,8 +1,8 @@
 #!/usr/bin/env bash
 #
-# Downloads the bundled tool binaries into Support/binaries/ (git-ignored).
-# yt-dlp and ffmpeg are both pinned to a specific release tag and verified
-# against a pinned SHA-256 before being installed.
+# Puts the bundled tool binaries in Support/binaries/ (git-ignored). yt-dlp is
+# downloaded at a pinned release tag and verified against a pinned SHA-256;
+# ffmpeg and ffprobe are built from pinned sources by scripts/build-ffmpeg.sh.
 #
 set -euo pipefail
 
@@ -13,12 +13,8 @@ mkdir -p "$DEST"
 YTDLP_TAG="2026.10.26"
 YTDLP_SHA256="0f922c15ccc0b83eefa1c8bc9104e434318c4bf16e408e1ee93b7745a6efe0aa"   # yt-dlp 2026.10.26 yt-dlp_macos
 
-# The tag names the package release; its darwin-arm64 binary comes from osxexperts.net's ffmpeg6arm.zip and reports ffmpeg 6.0.
-FFMPEG_TAG="b6.1.1"
-FFMPEG_SHA256="a90e3db6a3fd35f6074b013f948b1aa45b31c6375489d39e572bea3f18336584"   # eugeneware/ffmpeg-static b6.1.1 ffmpeg-darwin-arm64
-
 cleanup() {
-  rm -f "$DEST/yt-dlp.download" "$DEST/ffmpeg.download"
+  rm -f "$DEST/yt-dlp.download"
 }
 trap cleanup EXIT
 
@@ -51,11 +47,7 @@ fetch_verified "yt-dlp" \
 printf '%s' "$YTDLP_TAG" > "$DEST/yt-dlp.tag"
 echo "    yt-dlp $YTDLP_TAG verified"
 
-echo "==> ffmpeg ($FFMPEG_TAG, darwin-arm64)"
-FBASE="https://github.com/eugeneware/ffmpeg-static/releases/download/$FFMPEG_TAG"
-curl -fL --retry 3 -o "$DEST/ffmpeg.LICENSE" "$FBASE/darwin-arm64.LICENSE"
-fetch_verified "ffmpeg" "$FBASE/ffmpeg-darwin-arm64" "$DEST/ffmpeg.download" "$FFMPEG_SHA256" "$DEST/ffmpeg"
-echo "    ffmpeg $FFMPEG_TAG verified"
+"$ROOT/scripts/build-ffmpeg.sh" audio
 
 echo "==> Done"
 ls -lh "$DEST"

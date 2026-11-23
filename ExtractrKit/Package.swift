@@ -9,6 +9,7 @@ let package = Package(
     ],
     targets: [
         .target(name: "ExtractrKit"),
-        .testTarget(name: "ExtractrKitTests", dependencies: ["ExtractrKit"]),
+        .testTarget(
+            name: "ExtractrKitTests", dependencies: ["ExtractrKit"], resources: [.copy("Fixtures")]),
     ]
 )

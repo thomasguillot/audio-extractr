@@ -53,6 +53,21 @@ import Testing
         #expect(locator.ffmpeg() == URL(fileURLWithPath: "/app/bin/ffmpeg"))
         #expect(locator.ffmpegDir == "/app/bin")
     }
+    @Test func ffprobeIsAlwaysBundledBesideFFmpeg() throws {
+        let tmp = FileManager.default.temporaryDirectory
+            .appendingPathComponent("tl-\(UUID().uuidString)")
+        let bundled = tmp.appendingPathComponent("bundled")
+        let updated = tmp.appendingPathComponent("updated")
+        try FileManager.default.createDirectory(at: updated, withIntermediateDirectories: true)
+        defer { try? FileManager.default.removeItem(at: tmp) }
+        FileManager.default.createFile(
+            atPath: updated.appendingPathComponent("ffprobe").path, contents: Data("x".utf8),
+            attributes: [.posixPermissions: 0o755])
+
+        let locator = ToolLocator(bundledBinDir: bundled, updatedBinDir: updated)
+        #expect(locator.ffprobe() == bundled.appendingPathComponent("ffprobe"))
+        #expect(locator.ffprobe().deletingLastPathComponent() == locator.ffmpeg().deletingLastPathComponent())
+    }
     @Test func jobDirsAreUniqueAndCreated() throws {
         let a = try AppPaths.newJobDir()
         let b = try AppPaths.newJobDir()

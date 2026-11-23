@@ -10,8 +10,9 @@
 /site/dist
 /site/.astro
 
-# Fetched tool binaries (scripts/fetch-binaries.sh)
+# Fetched and built tool binaries (scripts/fetch-binaries.sh, scripts/build-ffmpeg.sh)
 /Support/binaries
+/Support/ffmpeg-build
 
 # Swift / SwiftPM
 .build/

@@ -81,11 +81,6 @@ func expectEveryInputIsLimited(_ args: [String], sourceLocation: SourceLocation 
         #expect(!args.contains("-t"))
         #expect(!args.contains("-filter:a"))
     }
-    @Test func probeArguments() {
-        #expect(
-            FFmpegCommand.probeArguments(file: input)
-                == ["-hide_banner", "-format_whitelist", demuxers, "-i", "/tmp/in.m4a"])
-    }
     @Test func pcmArgumentsDecodeMonoS16LE() {
         let args = FFmpegCommand.pcmArguments(
             input: URL(fileURLWithPath: "/tmp/in.m4a"),
@@ -111,82 +106,7 @@ func expectEveryInputIsLimited(_ args: [String], sourceLocation: SourceLocation 
                 input: input, output: output, trim: TrimRange(start: 2, end: 5), speed: 1.5))
         expectEveryInputIsLimited(
             FFmpegCommand.extractArguments(input: input, output: output, trim: TrimRange(), speed: 1))
-        expectEveryInputIsLimited(FFmpegCommand.probeArguments(file: input))
         expectEveryInputIsLimited(FFmpegCommand.pcmArguments(input: input, output: output))
         expectEveryInputIsLimited(FFmpegCommand.previewArguments(input: input, output: output))
-    }
-}
-
-@Suite struct FFmpegProbeParserTests {
-    @Test func aPlaylistOrScriptDemuxerIsRefused() {
-        for format in ["hls", "concat", "ffmetadata", "image2", "lavfi", "webm_dash_manifest"] {
-            let stderr = """
-                Input #0, \(format), from 'evil.m4a':
-                  Duration: 00:00:10.00, start: 0.000000, bitrate: 0 kb/s
-                  Stream #0:0: Audio: mp3, 44100 Hz, stereo, fltp, 128 kb/s
-                """
-            #expect(FFmpegProbeParser.parse(stderr: stderr, title: "evil") == nil, "\(format)")
-        }
-    }
-    @Test func everyAllowedContainerIsAccepted() {
-        for format in [
-            "mov,mp4,m4a,3gp,3g2,mj2", "matroska,webm", "mp3", "aac", "wav", "aiff", "flac", "ogg",
-            "caf", "asf", "avi", "mpegts", "flv", "mpeg", "dv", "mxf", "wv", "w64", "ac3",
-        ] {
-            let stderr = """
-                Input #0, \(format), from 'clip':
-                  Duration: 00:00:04.00, start: 0.000000, bitrate: 128 kb/s
-                """
-            #expect(
-                FFmpegProbeParser.parse(stderr: stderr, title: "clip")
-                    == MediaProbe(title: "clip", duration: 4), "\(format)")
-        }
-    }
-    @Test func theInputLineMustStartALine() {
-        let stderr = """
-            [hls @ 0x1] title: Input #0, mp3, from 'x':
-            Input #0, hls, from 'evil.mp3':
-              Duration: 00:00:10.00, start: 0.000000, bitrate: 0 kb/s
-            """
-        #expect(FFmpegProbeParser.parse(stderr: stderr, title: nil) == nil)
-    }
-    @Test func anUnopenableFileIsNil() {
-        #expect(FFmpegProbeParser.parse(stderr: "x.m4a: Invalid data found when processing input", title: nil) == nil)
-        #expect(FFmpegProbeParser.parse(stderr: "", title: nil) == nil)
-    }
-}
-
-@Suite struct FFmpegDurationParserTests {
-    @Test func parsesDurationLine() {
-        let stderr = "Input #0, mov\n  Duration: 00:03:25.43, start: 0.0, bitrate: 128 kb/s\n"
-        #expect(FFmpegDurationParser.duration(fromStderr: stderr) == 205.43)
-    }
-    @Test func missingDurationIsNil() {
-        #expect(FFmpegDurationParser.duration(fromStderr: "no duration here") == nil)
-        #expect(FFmpegDurationParser.duration(fromStderr: "  Duration: N/A, start: 0.000000") == nil)
-    }
-    /// A title tag is printed as a value line, deeper than the container's own header.
-    @Test func aTagCannotSetTheDuration() {
-        let stderr = """
-            Input #0, mov,mp4,m4a,3gp,3g2,mj2, from 'hostile.m4a':
-              Metadata:
-                title           : Duration: 99999999999999999:00:00.00, x\u{2028}  Duration: 99:00:00.00
-              Duration: 00:00:02.00, start: 0.000000, bitrate: 75 kb/s
-            """
-        #expect(FFmpegDurationParser.duration(fromStderr: stderr) == 2)
-    }
-    @Test func onlyTheTwoSpaceHeaderCounts() {
-        #expect(FFmpegDurationParser.duration(fromStderr: "Duration: 00:00:05.00\n") == nil)
-        #expect(FFmpegDurationParser.duration(fromStderr: "   Duration: 00:00:05.00\n") == nil)
-        #expect(FFmpegDurationParser.duration(fromStderr: "x  Duration: 00:00:05.00\n") == nil)
-    }
-    @Test func absurdDurationsAreDropped() {
-        for header in [
-            "99999999999999999:00:00.00", String(repeating: "9", count: 400) + ":00:00.00",
-            "169:00:00.00",
-        ] {
-            #expect(FFmpegDurationParser.duration(fromStderr: "  Duration: \(header), start: 0\n") == nil)
-        }
-        #expect(FFmpegDurationParser.duration(fromStderr: "  Duration: 167:59:59.00\n") == 604_799)
     }
 }

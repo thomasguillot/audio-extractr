@@ -25,10 +25,15 @@ jobs:
     timeout-minutes: 30
     steps:
       - uses: actions/checkout@v7.0.1
-      - name: Install xcodegen
-        run: brew install xcodegen
+      - name: Install build tools
+        run: brew install xcodegen pkgconf
+      - name: Cache the ffmpeg build
+        uses: actions/cache@55cc8345863c7cc4c66a329aec7e433d2d1c52a9 # v6.1.0
+        with:
+          path: Support/ffmpeg-build
+          key: ffmpeg-audio-${{ runner.os }}-${{ runner.arch }}-${{ hashFiles('scripts/build-ffmpeg.sh') }}
       - name: Fetch binaries
-        run: ./scripts/fetch-binaries.sh
+        run: FFMPEG_JOBS="$(sysctl -n hw.ncpu)" ./scripts/fetch-binaries.sh
       - name: Build app
         run: |
           cd App && xcodegen
