@@ -1,7 +1,16 @@
+import AppKit
+import ExtractrKit
 import SwiftUI
+
+final class AppDelegate: NSObject, NSApplicationDelegate {
+    func applicationWillTerminate(_ notification: Notification) {
+        ProcessRegistry.shared.terminateAll()
+    }
+}
 
 @main
 struct AudioExtractrApp: App {
+    @NSApplicationDelegateAdaptor(AppDelegate.self) private var appDelegate
     @State private var model: AppModel
     @State private var updateController: UpdateController
     @State private var ytDlpController: YtDlpUpdateController

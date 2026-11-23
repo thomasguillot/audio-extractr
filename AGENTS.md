@@ -84,8 +84,12 @@ always false — trust `swift test` and `xcodebuild`.
   style EdDSA, which needs no Developer Program) is the real fix and is not done yet.
 - `SHA2-256SUMS` for yt-dlp is likewise unauthenticated: it comes from the same release
   as the binary it describes.
-- Local-file probing parses `ffmpeg -i` stderr (no ffprobe bundled — an
-  intentional spec deviation).
+- Local-file probing parses `ffmpeg -i` stderr (no ffprobe bundled, an
+  intentional spec deviation). ffmpeg prints a newline inside a metadata key raw, so a
+  crafted file (an MP3 or FLAC, for one) can still forge the `Duration:` line in that
+  output. The parser reads only the input line and that duration, bounded to a week, so
+  the worst outcome is a wrong length on the timeline, the trim check and the progress
+  bar; bundling ffprobe and reading its JSON is the real fix.
 - Acknowledgements ship in the DMG and repo, not the About panel.
 
 ## Commit conventions

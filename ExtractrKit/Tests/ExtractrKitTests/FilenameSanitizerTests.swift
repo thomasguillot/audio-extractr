@@ -21,4 +21,18 @@ import Testing
         let long = String(repeating: "x", count: 300)
         #expect(FilenameSanitizer.sanitize(long).count == 200)
     }
+    @Test func dropsTheFacebookViewCountPrefix() {
+        #expect(
+            FilenameSanitizer.sanitize("9.9K views · 339 reactions | The Slapathon | Beast Camp")
+                == "The Slapathon Beast Camp")
+        #expect(FilenameSanitizer.sanitize("1.2M views · 45K reactions | Clip") == "Clip")
+    }
+    @Test func dropsASingularCount() {
+        #expect(FilenameSanitizer.sanitize("1 view · 1 reaction | Clip") == "Clip")
+        #expect(FilenameSanitizer.sanitize("1 view · 12 reactions | Clip") == "Clip")
+        #expect(FilenameSanitizer.sanitize("40 views · 1 reaction | Clip") == "Clip")
+    }
+    @Test func keepsAnOrdinaryPipe() {
+        #expect(FilenameSanitizer.sanitize("Part 1 | Intro") == "Part 1 Intro")
+    }
 }

@@ -12,5 +12,7 @@ import Testing
     @Test func detailExposure() {
         #expect(ExtractorError.conversionFailed(detail: "boom").detail == "boom")
         #expect(ExtractorError.outputMissing.detail == nil)
+        #expect(ExtractorError.liveStream.detail == nil)
+        #expect(ExtractorError.playlist.detail == nil)
     }
 }

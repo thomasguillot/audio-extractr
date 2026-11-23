@@ -5,12 +5,12 @@ public struct TrimRange: Equatable, Sendable {
         case tooLong
     }
 
-    public static let maxSeconds = 604_800
+    public static let maxSeconds: Double = 604_800
 
-    public var start: Int?
-    public var end: Int?
+    public var start: Double?
+    public var end: Double?
 
-    public init(start: Int? = nil, end: Int? = nil) {
+    public init(start: Double? = nil, end: Double? = nil) {
         self.start = start
         self.end = end
     }
@@ -22,20 +22,20 @@ public struct TrimRange: Equatable, Sendable {
         if let start, let end, end <= start { throw ValidationError.startAfterEnd }
         if let mediaDuration {
             // +1s slack: probed durations are often fractionally shorter than the tail.
-            if let end, Double(end) > mediaDuration + 1 { throw ValidationError.exceedsDuration }
-            if let start, Double(start) >= mediaDuration { throw ValidationError.exceedsDuration }
+            if let end, end > mediaDuration + 1 { throw ValidationError.exceedsDuration }
+            if let start, start >= mediaDuration { throw ValidationError.exceedsDuration }
         }
     }
 
     /// Source seconds ffmpeg should read (`-t`).
-    public var clipLimitSeconds: Int? {
+    public var clipLimitSeconds: Double? {
         end.map { $0 - (start ?? 0) }
     }
 
     /// Source seconds that will be processed, using the probed duration as the fallback end.
     public func clipSeconds(mediaDuration: Double?) -> Double? {
-        let effectiveEnd = end.map(Double.init) ?? mediaDuration
+        let effectiveEnd = end ?? mediaDuration
         guard let effectiveEnd else { return nil }
-        return effectiveEnd - Double(start ?? 0)
+        return effectiveEnd - (start ?? 0)
     }
 }

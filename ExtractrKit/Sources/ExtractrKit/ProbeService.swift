@@ -9,13 +9,20 @@ public struct ProbeService: Sendable {
         self.runner = runner
     }
 
+    /// The whole of `ffmpeg -i`'s stderr is the header the parser reads, head first.
+    static let probeStderrLimit = 4 << 20
+
+    /// Throws `.liveStream` for a live or upcoming stream and `.playlist` for a link to a
+    /// playlist.
     public func probe(_ input: MediaInput) async throws -> MediaProbe {
         switch input {
         case let .remote(url):
             let result = try await runner.run(
-                tools.ytDlp(), arguments: YtDlpCommand.probeArguments(url: url))
+                tools.ytDlp(), arguments: YtDlpCommand.probeArguments(url: url),
+                stop: YtDlpCommand.stop)
             guard result.exitCode == 0, let probe = YtDlpProbeParser.parse(Data(result.stdout.utf8))
             else { throw ExtractorError.probeFailed(detail: ExtractorError.tail(result.stderr)) }
+            try Self.check(probe)
             return probe
         case let .localFile(url):
             guard FileManager.default.fileExists(atPath: url.path) else {
@@ -23,11 +30,19 @@ public struct ProbeService: Sendable {
             }
             // ffmpeg -i with no output exits non-zero by design; the Duration line still prints.
             let result = try await runner.run(
-                tools.ffmpeg(), arguments: FFmpegCommand.probeArguments(file: url))
+                tools.ffmpeg(), arguments: FFmpegCommand.probeArguments(file: url),
+                stderrLimit: Self.probeStderrLimit)
             let title = url.deletingPathExtension().lastPathComponent
-            return MediaProbe(
-                title: title.isEmpty ? nil : title,
-                duration: FFmpegDurationParser.duration(fromStderr: result.stderr))
+            guard
+                let probe = FFmpegProbeParser.parse(
+                    stderr: result.stderr, title: title.isEmpty ? nil : title)
+            else { throw ExtractorError.probeFailed(detail: ExtractorError.tail(result.stderr)) }
+            return probe
         }
+    }
+
+    static func check(_ probe: MediaProbe) throws {
+        if probe.isPlaylist { throw ExtractorError.playlist }
+        if probe.isLive { throw ExtractorError.liveStream }
     }
 }

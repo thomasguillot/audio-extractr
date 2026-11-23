@@ -14,6 +14,21 @@ import Testing
         #expect(selection.duration == 0)
         #expect(selection.end == 0)
     }
+    @Test func aHugeDurationDoesNotTrap() {
+        var selection = TrimSelection(duration: 1e300)
+        selection.moveStart(to: 1e299)
+        selection.moveEnd(to: 5e299)
+        #expect(selection.trimRange == TrimRange(start: 1e299, end: 5e299))
+    }
+    @Test func aNonFiniteDurationIsEmpty() {
+        for duration in [Double.infinity, -.infinity, .nan] {
+            var selection = TrimSelection(duration: duration)
+            #expect(selection.duration == 0)
+            selection.moveStart(to: 5)
+            selection.moveEnd(to: .infinity)
+            #expect(selection.trimRange == TrimRange())
+        }
+    }
     @Test func handlesClampToClipAndEachOther() {
         var selection = TrimSelection(duration: 100)
         selection.moveStart(to: -10)
@@ -35,13 +50,15 @@ import Testing
         #expect(selection.trimRange == TrimRange(start: nil, end: nil))
         selection.moveStart(to: 10.4)
         selection.moveEnd(to: 89.6)
-        #expect(selection.trimRange == TrimRange(start: 10, end: 89))
+        #expect(selection.trimRange == TrimRange(start: 10.4, end: 89.6))
     }
-    @Test func trimRangeMatchesDisplayedTimecode() {
+    /// The preview plays the dragged, fractional range, so the export must cut the same one;
+    /// only the text fields round to whole seconds.
+    @Test func trimRangeKeepsTheDraggedFraction() {
         var selection = TrimSelection(duration: 100)
         selection.moveStart(to: 10.6)
         selection.moveEnd(to: 89.6)
-        #expect(selection.trimRange == TrimRange(start: 10, end: 89))
+        #expect(selection.trimRange == TrimRange(start: 10.6, end: 89.6))
         #expect(TimeCode.text(from: selection.start) == "0:10")
         #expect(TimeCode.text(from: selection.end) == "1:29")
     }
