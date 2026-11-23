@@ -88,6 +88,7 @@ import Testing
                 "--extractor-args", "youtube:player_client=android",
                 "-f", "bestaudio[ext=m4a]/bestaudio[ext=webm]/bestaudio/best[height<=480]",
                 "--no-playlist", "--no-warnings", "--newline",
+                "--downloader", "native",
                 "--ffmpeg-location", "/app/bin",
                 "-o", "/tmp/job/download.%(ext)s",
                 "--postprocessor-args", "FixupM4a+ffmpeg_i:-format_whitelist \(demuxers)",
@@ -97,5 +98,11 @@ import Testing
                 "--postprocessor-args", "FixupDuplicateMoov+ffmpeg_i:-format_whitelist \(demuxers)",
                 "--postprocessor-args", "FixupStretched+ffmpeg_i:-format_whitelist \(demuxers)",
             ])
+    }
+
+    @Test func streamsAreFetchedByYtDlpNotFFmpeg() throws {
+        let args = YtDlpCommand.downloadArguments(url: url, outputTemplate: "t", ffmpegDir: "d")
+        let index = try #require(args.firstIndex(of: "--downloader"))
+        #expect(args[index + 1] == "native")
     }
 }

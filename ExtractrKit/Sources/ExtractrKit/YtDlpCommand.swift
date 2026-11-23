@@ -18,6 +18,7 @@ public enum YtDlpCommand {
         ]
     }
 
+    /// The bundled ffmpeg has no network protocols, so yt-dlp fetches HLS itself.
     public static func downloadArguments(url: URL, outputTemplate: String, ffmpegDir: String)
         -> [String]
     {
@@ -26,6 +27,7 @@ public enum YtDlpCommand {
             "--extractor-args", "youtube:player_client=android",
             "-f", format,
             "--no-playlist", "--no-warnings", "--newline",
+            "--downloader", "native",
             "--ffmpeg-location", ffmpegDir,
             "-o", outputTemplate,
         ] + postprocessorInputGuards
