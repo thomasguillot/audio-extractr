@@ -28,7 +28,18 @@ extension Error {
                 return "That trim range is longer than a week — check the times."
             }
         }
+        if self as? FacebookShareError == .loginRequired {
+            return "Facebook wants you to sign in before it opens this link. Open it in your browser and paste the video page's address instead."
+        }
         if let e = self as? ExtractorError {
+            switch FacebookFailure.classify(e.detail ?? "") {
+            case .loginRequired:
+                return "Facebook wants you to sign in to see this video. Audio Extractr only works with public videos."
+            case .unreadable:
+                return "Facebook didn't share this video. It may be private or removed. If it plays in your browser without signing in, try again later."
+            case nil:
+                break
+            }
             switch e {
             case .probeFailed:
                 return "This link or file isn't supported or couldn't be read."
