@@ -1,7 +1,7 @@
 # Acknowledgements
 
-Audio Extractr is MIT-licensed. It bundles two third-party command-line tools,
-run as separate processes (never linked into the app):
+Audio Extractr is MIT-licensed. It bundles third-party command-line tools, run as
+separate processes (never linked into the app):
 
 ## yt-dlp
 
@@ -11,8 +11,12 @@ run as separate processes (never linked into the app):
 
 ## FFmpeg
 
-- Binary build from https://github.com/eugeneware/ffmpeg-static (GPLv3 build of
-  https://ffmpeg.org). The build's license text ships inside the app at
-  `Contents/Resources/bin/ffmpeg.LICENSE`.
-- FFmpeg source: https://ffmpeg.org/download.html — the bundled binary's
-  corresponding source is available from the two projects above.
+- https://ffmpeg.org. The bundled `ffmpeg` and `ffprobe` are built by
+  `scripts/build-ffmpeg.sh` from unmodified, pinned upstream sources: FFmpeg
+  with LAME (https://lame.sourceforge.io) for MP3 encoding. Built without any
+  GPL component, the binaries are licensed LGPL-2.1-or-later. The license texts
+  ship inside the app at `Contents/Resources/bin/ffmpeg.LICENSE`, and the
+  versions and configure line at `Contents/Resources/bin/ffmpeg.buildinfo`.
+- Corresponding source: each release carries
+  `ffmpeg-source-audio-<version>.tar.gz`, the exact source tarballs plus the
+  build script.

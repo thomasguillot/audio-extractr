@@ -38,17 +38,18 @@ The app is unsigned, so macOS blocks it on first launch:
 
 ## For developers
 
-Requirements: macOS 26+, Xcode 26+, `brew install xcodegen swiftlint create-dmg`.
+Requirements: macOS 26+, Xcode 26+, `brew install xcodegen swiftlint create-dmg pkgconf`.
 
 ```sh
 cd ExtractrKit && swift test        # all logic tests
-./scripts/fetch-binaries.sh         # fetch yt-dlp + ffmpeg (verified)
+./scripts/fetch-binaries.sh         # fetch yt-dlp, build ffmpeg + ffprobe (verified)
 cd App && xcodegen                  # generate the Xcode project
 open App/AudioExtractr.xcodeproj    # or xcodebuild
 ```
 
 Release: bump `MARKETING_VERSION` in `App/project.yml`, run
-`./scripts/make-dmg.sh`, publish with `gh release create`.
+`./scripts/make-dmg.sh`, publish with `gh release create`, and attach
+`dist/ffmpeg-source-audio-<version>.tar.gz` (the LGPL corresponding source).
 
 ## License
 
