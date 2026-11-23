@@ -10,9 +10,10 @@ ROOT="$(cd "$(dirname "${BASH_SOURCE[0]}")/.." && pwd)"
 DEST="$ROOT/Support/binaries"
 mkdir -p "$DEST"
 
-YTDLP_TAG="2026.08.19"
-YTDLP_SHA256="0f192b7ec147ab6288885d6351d9ab67367640029b4377576ef46dd79cf7b202"   # yt-dlp 2026.08.19 yt-dlp_macos
+YTDLP_TAG="2026.10.26"
+YTDLP_SHA256="0f922c15ccc0b83eefa1c8bc9104e434318c4bf16e408e1ee93b7745a6efe0aa"   # yt-dlp 2026.10.26 yt-dlp_macos
 
+# The tag names the package release; its darwin-arm64 binary comes from osxexperts.net's ffmpeg6arm.zip and reports ffmpeg 6.0.
 FFMPEG_TAG="b6.1.1"
 FFMPEG_SHA256="a90e3db6a3fd35f6074b013f948b1aa45b31c6375489d39e572bea3f18336584"   # eugeneware/ffmpeg-static b6.1.1 ffmpeg-darwin-arm64
 
