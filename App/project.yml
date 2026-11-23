@@ -38,14 +38,14 @@ targets:
         script: |
           set -e
           SRC="$SRCROOT/../Support/binaries"
-          if [ ! -x "$SRC/yt-dlp" ] || [ ! -x "$SRC/ffmpeg" ]; then
+          if [ ! -x "$SRC/yt-dlp" ] || [ ! -x "$SRC/ffmpeg" ] || [ ! -x "$SRC/ffprobe" ]; then
             echo "error: missing Support/binaries — run scripts/fetch-binaries.sh first" >&2
             exit 1
           fi
           DST="$BUILT_PRODUCTS_DIR/$UNLOCALIZED_RESOURCES_FOLDER_PATH/bin"
           mkdir -p "$DST"
-          cp "$SRC/yt-dlp" "$SRC/ffmpeg" "$SRC/yt-dlp.tag" "$SRC/ffmpeg.LICENSE" "$DST/"
-          chmod +x "$DST/yt-dlp" "$DST/ffmpeg"
+          cp "$SRC/yt-dlp" "$SRC/ffmpeg" "$SRC/ffprobe" "$SRC/yt-dlp.tag" "$SRC/ffmpeg.LICENSE" "$SRC/ffmpeg.buildinfo" "$DST/"
+          chmod +x "$DST/yt-dlp" "$DST/ffmpeg" "$DST/ffprobe"
     settings:
       base:
         PRODUCT_BUNDLE_IDENTIFIER: com.audioextractr.app
