@@ -78,9 +78,11 @@ final class PreviewPlayer {
         playheadTime = start
     }
 
-    /// Playback can go no further: the end of the selection, or of the file without one.
-    private var isAtEnd: Bool {
-        if let range { return player.currentTime().seconds >= range.end }
+    /// The playhead sits where playback should not start: before or past the selection,
+    /// or at the end of the file without one.
+    private var isOutsideRange: Bool {
+        let now = player.currentTime().seconds
+        if let range { return now < range.start || now >= range.end }
         guard let item = player.currentItem, item.duration.isNumeric else { return false }
         return player.currentTime() >= item.duration
     }
@@ -88,7 +90,7 @@ final class PreviewPlayer {
     private func play() {
         // Also reached by scrubbing to the very end: AVPlayer will not restart from there
         // on rate alone, so this would otherwise set isPlaying with nothing happening.
-        if isAtEnd { rewind() }
+        if isOutsideRange { rewind() }
         player.rate = rate
         isPlaying = true
     }
