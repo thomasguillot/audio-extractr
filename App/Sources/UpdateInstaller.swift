@@ -35,7 +35,7 @@ struct UpdateInstaller {
                   ["attach", dmg.path, "-nobrowse", "-readonly", "-mountpoint", mountPoint.path])
         var detached = false
         defer {
-            if !detached { try? shell("/usr/bin/hdiutil", ["detach", mountPoint.path, "-force"]) }
+            if !detached { _ = try? shell("/usr/bin/hdiutil", ["detach", mountPoint.path, "-force"]) }
         }
 
         let newApp = mountPoint.appendingPathComponent(appName)
@@ -52,7 +52,7 @@ struct UpdateInstaller {
 
         try shell("/usr/bin/ditto", [newApp.path, staged.path])
         // Downloaded apps carry com.apple.quarantine; Gatekeeper re-blocks the relaunch otherwise.
-        try? shell("/usr/bin/xattr", ["-dr", "com.apple.quarantine", staged.path])
+        _ = try? shell("/usr/bin/xattr", ["-dr", "com.apple.quarantine", staged.path])
 
         if FileManager.default.fileExists(atPath: installedPath) {
             _ = try FileManager.default.replaceItemAt(installed, withItemAt: staged)
@@ -61,7 +61,7 @@ struct UpdateInstaller {
         }
         swapped = true
 
-        try? shell("/usr/bin/hdiutil", ["detach", mountPoint.path, "-force"])
+        _ = try? shell("/usr/bin/hdiutil", ["detach", mountPoint.path, "-force"])
         detached = true
         try? FileManager.default.removeItem(at: dmg)
 

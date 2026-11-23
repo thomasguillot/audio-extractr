@@ -147,8 +147,8 @@ final class UpdateWindowModel {
                 let dmg = try await self.downloader.downloadToTemp(
                     dmgURL: self.update.dmgURL, expectedSize: self.update.size,
                     expectedSHA256: self.update.sha256,
-                    onProgress: { received, total in
-                        Task { @MainActor [weak self] in
+                    onProgress: { [weak self] received, total in
+                        Task { @MainActor in
                             // One Task per chunk, and Tasks are unordered: never go backwards.
                             guard let self, case let .downloading(shown, _) = self.phase,
                                 received >= shown
