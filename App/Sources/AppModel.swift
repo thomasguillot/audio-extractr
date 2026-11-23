@@ -40,6 +40,7 @@ final class AppModel {
     private(set) var transcriptFailure: String?
     private(set) var transcriptFailureDetail: String?
     private(set) var transcribing = false
+    private(set) var saving = false
     private(set) var transcriptLocales: [Locale] = []
 
     let tools: ToolLocator
@@ -56,6 +57,8 @@ final class AppModel {
     private var prepareTask: Task<Void, Never>?
     private var peaksTask: Task<Void, Never>?
     private var playerTask: Task<Void, Never>?
+    /// Bumped whenever a job or extraction is superseded, so late results from it are dropped.
+    private var generation = 0
 
     init() {
         let bundledBin =
@@ -83,6 +86,11 @@ final class AppModel {
 
     func pickFile(_ url: URL) {
         clearError()
+        if let problem = Self.problem(opening: url) {
+            errorMessage = problem
+            errorDetail = nil
+            return
+        }
         begin(.localFile(url))
     }
 
@@ -123,58 +131,15 @@ final class AppModel {
         guard let trim = resolvedTrim() else { return }
         player?.pause()
         stage = .extracting(nil)
-        let speed = speed
+        generation += 1
+        let id = generation
+        let plan = ExtractionPlan(sourceFile: sourceFile, trim: trim, speed: speed, jobDir: jobDir)
         let duration = probe?.duration
+        let folder = Preferences().saveFolder
+        let base = FilenameSanitizer.sanitize(fileName)
         extractionTask = Task {
-            await runExtraction(
-                sourceFile: sourceFile, jobDir: jobDir, trim: trim, speed: speed,
-                duration: duration)
+            await runExtraction(plan, duration: duration, saveAs: base, in: folder, id: id)
         }
-    }
-
-    private func runExtraction(
-        sourceFile: URL, jobDir: URL, trim: TrimRange, speed: Double, duration: Double?
-    ) async {
-        do {
-            let plan = ExtractionPlan(
-                sourceFile: sourceFile, trim: trim, speed: speed, jobDir: jobDir)
-            let tempMP3 = try await extractor.extract(
-                plan: plan, expectedDuration: duration
-            ) { fraction in
-                Task { @MainActor [weak self] in
-                    guard let self, case .extracting = self.stage else { return }
-                    self.stage = .extracting(fraction)
-                }
-            }
-            try Task.checkCancellation()
-            let saved: URL
-            do {
-                saved = try save(tempMP3: tempMP3)
-            } catch {
-                stage = .edit
-                errorMessage = "Couldn't save to your chosen folder. Pick another in Settings."
-                errorDetail = error.localizedDescription
-                extractionTask = nil
-                return
-            }
-            if saveTranscript {
-                transcribing = true
-                await runTranscription(
-                    mp3: saved, sourceFile: sourceFile, trim: trim, speed: speed, jobDir: jobDir)
-                transcribing = false
-            }
-            // A reset during transcription already tore this job down and may have started
-            // another; finishing here would yank the user out of it and clean up its files.
-            guard self.jobDir == jobDir else { return }
-            stage = .done(saved)
-            cleanupJob()
-        } catch is CancellationError {
-            if case .extracting = stage { stage = .edit }
-        } catch {
-            if case .extracting = stage { stage = .edit }
-            present(error)
-        }
-        extractionTask = nil
     }
 
     /// No validate() on the selection branch: TrimSelection clamps to [0, duration] and keeps
@@ -184,17 +149,6 @@ final class AppModel {
     private func resolvedTrim() -> TrimRange? {
         if let selection { return selection.trimRange }
         return parsedTrim()
-    }
-
-    private func save(tempMP3: URL) throws -> URL {
-        let folder = Preferences().saveFolder
-        try? FileManager.default.createDirectory(at: folder, withIntermediateDirectories: true)
-        let destination = OutputName.available(
-            base: FilenameSanitizer.sanitize(fileName), ext: "mp3",
-            in: folder
-        ) { FileManager.default.fileExists(atPath: $0.path) }
-        try FileManager.default.copyItem(at: tempMP3, to: destination)
-        return destination
     }
 
     func cancel() {
@@ -229,12 +183,14 @@ final class AppModel {
         saveTranscript = false
         transcriptLocaleIdentifier = ""
         transcribing = false
+        saving = false
         selection = nil
         clearError()
         dismissTranscriptFailure()
     }
 
     private func cleanupJob() {
+        generation += 1
         peaksTask?.cancel()
         peaksTask = nil
         playerTask?.cancel()
@@ -248,8 +204,11 @@ final class AppModel {
         jobDir = nil
     }
 
+    private static let dropFailure =
+        "That item couldn't be read as a file. Try dropping a file from Finder."
+
     func presentDropFailure(_ error: Error? = nil) {
-        errorMessage = "That item couldn't be read as a file. Try dropping a file from Finder."
+        errorMessage = Self.dropFailure
         errorDetail = error?.localizedDescription
     }
 
@@ -301,6 +260,7 @@ extension AppModel {
     }
 
     private func prepareSource(_ newInput: MediaInput) async throws {
+        try Task.checkCancellation()
         let dir = try AppPaths.newJobDir()
         jobDir = dir
         switch newInput {
@@ -308,9 +268,11 @@ extension AppModel {
             sourceFile = url
         case let .remote(url):
             stage = .downloading(nil)
-            let downloaded = try await downloader.download(url, into: dir) { fraction in
-                Task { @MainActor [weak self] in
-                    guard let self, case .downloading = self.stage else { return }
+            let id = generation
+            let downloaded = try await downloader.download(url, into: dir) { [weak self] fraction in
+                Task { @MainActor in
+                    guard let self, self.generation == id, case .downloading = self.stage
+                    else { return }
                     self.stage = .downloading(fraction)
                 }
             }
@@ -356,7 +318,8 @@ extension AppModel {
         guard let sourceFile, let jobDir else { return }
         playerTask = Task { [previewTranscoder] in
             let made = await PreviewPlayer.make(for: sourceFile) {
-                try await previewTranscoder.transcode(sourceFile, jobDir: jobDir)
+                try Task.checkCancellation()
+                return try await previewTranscoder.transcode(sourceFile, jobDir: jobDir)
             }
             guard !Task.isCancelled else { made?.teardown(); return }
             made?.setRate(speed)
@@ -427,13 +390,105 @@ extension AppModel {
     }
 }
 
+private struct SaveFailure: Error {
+    let underlying: Error
+}
+
 extension AppModel {
-    private func runTranscription(
-        mp3: URL, sourceFile: URL, trim: TrimRange, speed: Double, jobDir: URL
+    private static func problem(opening url: URL) -> String? {
+        guard url.isFileURL else { return dropFailure }
+        var isDirectory: ObjCBool = false
+        guard FileManager.default.fileExists(atPath: url.path, isDirectory: &isDirectory) else {
+            return dropFailure
+        }
+        if isDirectory.boolValue { return "That's a folder. Choose an audio or video file instead." }
+        guard FileManager.default.isReadableFile(atPath: url.path) else {
+            return "That file couldn't be opened. Check that you have permission to read it."
+        }
+        return nil
+    }
+
+    private func runExtraction(
+        _ plan: ExtractionPlan, duration: Double?, saveAs base: String, in folder: URL, id: Int
     ) async {
+        defer {
+            if generation == id {
+                extractionTask = nil
+                saving = false
+            }
+        }
         do {
-            let audio = try await transcriptionAudio(
-                mp3: mp3, sourceFile: sourceFile, trim: trim, speed: speed, jobDir: jobDir)
+            let saved = try await convertAndSave(
+                plan, duration: duration, as: base, in: folder, id: id)
+            if saveTranscript {
+                transcribing = true
+                await runTranscription(mp3: saved, plan: plan)
+                guard generation == id else { return }
+                transcribing = false
+            }
+            extractionTask = nil
+            stage = .done(saved)
+            cleanupJob()
+        } catch {
+            guard generation == id else { return }
+            if case .extracting = stage { stage = .edit }
+            if let failure = error as? SaveFailure {
+                errorMessage = "Couldn't save to your chosen folder. Pick another in Settings."
+                errorDetail = failure.underlying.localizedDescription
+            } else if !(error is CancellationError), !Task.isCancelled {
+                present(error)
+            }
+        }
+    }
+
+    private func convertAndSave(
+        _ plan: ExtractionPlan, duration: Double?, as base: String, in folder: URL, id: Int
+    ) async throws -> URL {
+        let tempMP3 = try await extractor.extract(
+            plan: plan, expectedDuration: duration
+        ) { [weak self] fraction in
+            Task { @MainActor in
+                guard let self, self.generation == id, case .extracting = self.stage
+                else { return }
+                self.stage = .extracting(fraction)
+            }
+        }
+        try Task.checkCancellation()
+        saving = true
+        let saved: URL
+        do {
+            saved = try await Self.save(tempMP3, as: base, in: folder)
+        } catch {
+            throw SaveFailure(underlying: error)
+        }
+        guard !Task.isCancelled, generation == id else {
+            try? FileManager.default.removeItem(at: saved)
+            throw CancellationError()
+        }
+        saving = false
+        return saved
+    }
+
+    /// Off the main actor: a move to another volume is a full copy, which can take minutes.
+    private nonisolated static func save(_ file: URL, as base: String, in folder: URL)
+        async throws -> URL
+    {
+        try await Task.detached(priority: .userInitiated) {
+            let manager = FileManager.default
+            try? manager.createDirectory(at: folder, withIntermediateDirectories: true)
+            let destination = OutputName.available(base: base, ext: "mp3", in: folder) {
+                manager.fileExists(atPath: $0.path)
+            }
+            try manager.moveItem(at: file, to: destination)
+            return destination
+        }.value
+    }
+}
+
+extension AppModel {
+    private func runTranscription(mp3: URL, plan: ExtractionPlan) async {
+        do {
+            let audio = try await transcriptionAudio(mp3: mp3, plan: plan)
             let locale = resolvedTranscriptLocale()
             var transcript = try await transcriber.transcribe(file: audio, locale: locale)
 
@@ -462,15 +517,12 @@ extension AppModel {
     }
 
     /// Transcribe 1.0x audio: the atempo filter distorts speech and costs accuracy.
-    private func transcriptionAudio(
-        mp3: URL, sourceFile: URL, trim: TrimRange, speed: Double, jobDir: URL
-    ) async throws -> URL {
-        guard speed != 1 else { return mp3 }
-        let dir = jobDir.appendingPathComponent("transcribe", isDirectory: true)
+    private func transcriptionAudio(mp3: URL, plan: ExtractionPlan) async throws -> URL {
+        guard plan.speed != 1 else { return mp3 }
+        let dir = plan.jobDir.appendingPathComponent("transcribe", isDirectory: true)
         try FileManager.default.createDirectory(at: dir, withIntermediateDirectories: true)
-        let plan = ExtractionPlan(
-            sourceFile: sourceFile, trim: trim, speed: 1, jobDir: dir)
-        return try await extractor.extract(plan: plan, expectedDuration: probe?.duration) { _ in }
+        let normal = ExtractionPlan(sourceFile: plan.sourceFile, trim: plan.trim, speed: 1, jobDir: dir)
+        return try await extractor.extract(plan: normal, expectedDuration: probe?.duration) { _ in }
     }
 
     private func resolvedTranscriptLocale() -> Locale {
