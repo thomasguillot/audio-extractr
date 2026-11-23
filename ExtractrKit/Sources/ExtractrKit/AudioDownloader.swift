@@ -35,10 +35,13 @@ public struct AudioDownloader: Sendable {
         return downloaded
     }
 
+    /// One extension, any container: the `best` fallback keeps whatever the site serves.
+    /// While yt-dlp works the folder also holds .part, .ytdl and download.temp.<ext> files.
     public static func findDownloaded(in files: [URL]) -> URL? {
-        files.first {
-            $0.lastPathComponent.hasPrefix("download.")
-                && !$0.lastPathComponent.hasSuffix(".part")
+        files.first { file in
+            guard let match = file.lastPathComponent.wholeMatch(of: /download\.([A-Za-z0-9_]+)/)
+            else { return false }
+            return !["part", "ytdl", "temp"].contains(match.1.lowercased())
         }
     }
 }
