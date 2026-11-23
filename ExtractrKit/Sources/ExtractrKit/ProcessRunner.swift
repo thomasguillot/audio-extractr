@@ -123,7 +123,7 @@ public struct ProcessRunner: Sendable {
 
     /// Enough for yt-dlp's -J of a long video; the head is kept.
     public static let defaultStdoutLimit = 32 << 20
-    /// Only the tail of stderr is ever shown; the probe asks for more to keep ffmpeg's header.
+    /// Only the tail of stderr is ever shown.
     public static let defaultStderrLimit = 64 << 10
 
     /// Chunked rather than `FileHandle.bytes.lines`: the line iterator stalls once a single

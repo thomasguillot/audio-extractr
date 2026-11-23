@@ -57,9 +57,6 @@ import Testing
         #expect(collected.lines.last == "last")
         #expect(ProcessRunner.defaultStdoutLimit == 32 << 20)
     }
-    @Test func theLocalProbeKeepsTheWholeHeader() {
-        #expect(ProbeService.probeStderrLimit == 4 << 20)
-    }
     @Test func missingExecutableThrows() async {
         await #expect(throws: ProcessRunnerError.self) {
             try await runner.run(URL(fileURLWithPath: "/no/such/tool"), arguments: [])

@@ -9,8 +9,8 @@ public struct ProbeService: Sendable {
         self.runner = runner
     }
 
-    /// The whole of `ffmpeg -i`'s stderr is the header the parser reads, head first.
-    static let probeStderrLimit = 4 << 20
+    /// Far above what the requested fields come to; past it the JSON is cut and fails to decode.
+    static let probeStdoutLimit = 1 << 20
 
     /// Throws `.liveStream` for a live or upcoming stream and `.playlist` for a link to a
     /// playlist.
@@ -28,14 +28,13 @@ public struct ProbeService: Sendable {
             guard FileManager.default.fileExists(atPath: url.path) else {
                 throw ExtractorError.probeFailed(detail: "File not found: \(url.path)")
             }
-            // ffmpeg -i with no output exits non-zero by design; the Duration line still prints.
             let result = try await runner.run(
-                tools.ffmpeg(), arguments: FFmpegCommand.probeArguments(file: url),
-                stderrLimit: Self.probeStderrLimit)
+                tools.ffprobe(), arguments: FFprobeCommand.arguments(file: url),
+                stdoutLimit: Self.probeStdoutLimit)
             let title = url.deletingPathExtension().lastPathComponent
-            guard
-                let probe = FFmpegProbeParser.parse(
-                    stderr: result.stderr, title: title.isEmpty ? nil : title)
+            guard result.exitCode == 0,
+                let probe = FFprobeParser.parse(
+                    Data(result.stdout.utf8), title: title.isEmpty ? nil : title)
             else { throw ExtractorError.probeFailed(detail: ExtractorError.tail(result.stderr)) }
             return probe
         }

@@ -35,10 +35,6 @@ public enum FFmpegCommand {
         return args
     }
 
-    public static func probeArguments(file: URL) -> [String] {
-        ["-hide_banner"] + inputArguments(file)
-    }
-
     /// Low rate is plenty for a ~300-bucket strip and keeps the temp PCM small.
     public static let peaksSampleRate = 2_000
 

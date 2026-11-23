@@ -32,7 +32,7 @@ public enum YtDlpProbeParser {
             let container = try decoder.container(keyedBy: CodingKeys.self)
             title = try container.decodeIfPresent(String.self, forKey: .title)
             duration = try container.decodeIfPresent(Double.self, forKey: .duration)
-                .flatMap(FFmpegDurationParser.bounded)
+                .flatMap(MediaDuration.bounded)
             isLive = try? container.decodeIfPresent(Bool.self, forKey: .isLive)
             liveStatus = try? container.decodeIfPresent(String.self, forKey: .liveStatus)
             type = try? container.decodeIfPresent(String.self, forKey: .type)
