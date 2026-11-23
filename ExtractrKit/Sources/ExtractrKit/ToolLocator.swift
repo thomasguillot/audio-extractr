@@ -1,7 +1,8 @@
 import Foundation
 
 /// Resolves tool binaries: a user-updated yt-dlp (written by YtDlpUpdater) wins over the
-/// bundled seed; ffmpeg is bundled-only — never executed from a user-writable location.
+/// bundled seed; ffmpeg and ffprobe are bundled-only, never executed from a user-writable
+/// location.
 public struct ToolLocator: Sendable {
     public let bundledBinDir: URL
     public let updatedBinDir: URL
@@ -25,6 +26,10 @@ public struct ToolLocator: Sendable {
 
     public func ffmpeg() -> URL {
         bundledBinDir.appendingPathComponent("ffmpeg")
+    }
+
+    public func ffprobe() -> URL {
+        bundledBinDir.appendingPathComponent("ffprobe")
     }
 
     public var ffmpegDir: String { bundledBinDir.path }
