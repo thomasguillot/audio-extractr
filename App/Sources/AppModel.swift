@@ -349,7 +349,8 @@ extension AppModel {
         guard let sourceFile, let jobDir else { return }
         playerTask = Task { [previewTranscoder] in
             let made = await PreviewPlayer.make(for: sourceFile) {
-                try await previewTranscoder.transcode(sourceFile, jobDir: jobDir)
+                try Task.checkCancellation()
+                return try await previewTranscoder.transcode(sourceFile, jobDir: jobDir)
             }
             guard !Task.isCancelled else { made?.teardown(); return }
             made?.setRate(speed)
