@@ -48,6 +48,7 @@ final class AppModel {
     private let downloader: AudioDownloader
     private let peakExtractor: PeakExtractor
     private let previewTranscoder: PreviewTranscoder
+    private let shareResolver = FacebookShareResolver()
     private let transcriber = Transcriber()
     private var sourceFile: URL?
     private var jobDir: URL?
@@ -276,12 +277,18 @@ extension AppModel {
         stage = .probing
         prepareTask = Task {
             do {
-                let result = try await probeService.probe(newInput)
+                var input = newInput
+                if case let .remote(url) = newInput {
+                    let resolved = try await shareResolver.resolve(url)
+                    try Task.checkCancellation()
+                    input = .remote(try URLPolicy.validated(resolved.absoluteString))
+                }
+                let result = try await probeService.probe(input)
                 try Task.checkCancellation()
                 probe = result
-                displayTitle = result.title ?? fallbackTitle(for: newInput)
+                displayTitle = result.title ?? fallbackTitle(for: input)
                 fileName = FilenameSanitizer.sanitize(displayTitle)
-                try await prepareSource(newInput)
+                try await prepareSource(input)
             } catch is CancellationError {
                 // Superseded or cancelled; state already reset by the canceller.
             } catch {
